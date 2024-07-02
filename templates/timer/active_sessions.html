@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Active Session - Focus Timer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold mb-8">Active Focus Session</h1>
+    <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md"
+         hx-get="{% url 'timer:update_session' %}"
+         hx-trigger="every 1s">
+        <h2 class="text-2xl font-semibold mb-4">{{ session.technique }} Technique</h2>
+        <div class="mb-4">
+            <p>Session Progress:</p>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ session.progress }}%"></div>
+            </div>
+        </div>
+        <div class="mb-4">
+            <p>Current Interval:</p>
+            <p class="text-xl font-bold">{{ current_interval.is_break|yesno:"Break,Focus" }} Time</p>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ current_interval.progress }}%"></div>
+            </div>
+        </div>
+        <p>Started: <span id="session-start">{{ session.start_time|timesince }}</span> ago</p>
+        <p>Total Duration: {{ session.total_duration }}</p>
+        <form method="post" action="{% url 'timer:end_session' %}" class="mt-6">
+            {% csrf_token %}
+            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
+                End Session
+            </button>
+        </form>
+    </div>
+{% endblock %}

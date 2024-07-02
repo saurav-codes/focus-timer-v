@@ -1,0 +1,36 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Focus Timer{% endblock %}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dark {
+            @apply bg-gray-800 text-white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="bg-gray-200 {{ user.userprofile.theme_preference }}:bg-gray-700 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{% url 'home' %}" class="text-xl font-bold">Focus Timer</a>
+            <div>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'home' %}" class="mr-4">Home</a>
+                    <a href="{% url 'analytics' %}" class="mr-4">Analytics</a>
+                    <a href="{% url 'account_logout' %}" class="mr-4">Logout</a>
+                    <a href="{% url 'toggle_theme' %}" class="mr-4">Toggle Theme</a>
+                {% else %}
+                    <a href="{% url 'account_login' %}">Login with Twitch</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <main class="container mx-auto mt-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

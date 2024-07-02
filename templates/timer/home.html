@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Focus Timer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold mb-8">Welcome, {{ user.username }}!</h1>
+
+    {% if active_session %}
+        <div class="bg-blue-100 dark:bg-blue-900 p-4 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-2">Active Session</h2>
+            <p>Technique: {{ active_session.technique }}</p>
+            <p>Started: {{ active_session.start_time|timesince }} ago</p>
+            <a href="{% url 'active_session' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-4 inline-block">
+                Continue Session
+            </a>
+        </div>
+    {% else %}
+        <div class="bg-green-100 dark:bg-green-900 p-4 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-2">Start a New Session</h2>
+            <a href="{% url 'start_session' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mt-2 inline-block">
+                Start Session
+            </a>
+        </div>
+    {% endif %}
+
+    {% if user_profile.is_streamer %}
+        <div class="bg-purple-100 dark:bg-purple-900 p-4 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-2">Streamer Tools</h2>
+            <p>Share your session link with your fans:</p>
+            <input type="text" value="{{ request.build_absolute_uri }}join/{{ user.id }}/" class="w-full p-2 border rounded" readonly>
+        </div>
+    {% endif %}
+
+    <div class="bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg">
+        <h2 class="text-xl font-semibold mb-2">Custom Techniques</h2>
+        <a href="{% url 'custom_technique' %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mt-2 inline-block">
+            Create Custom Technique
+        </a>
+    </div>
+{% endblock %}
