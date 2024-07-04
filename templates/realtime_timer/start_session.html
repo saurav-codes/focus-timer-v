@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Start a New Focus Session</h1>
+<form method="post">
+    {% csrf_token %}
+    <label for="technique">Choose a Technique:</label>
+    <select name="technique_id" id="technique">
+        {% for technique in techniques %}
+        <option value="{{ technique.id }}">{{ technique.name }}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <label for="duration">Total Duration (minutes):</label>
+    <input type="number" name="total_duration" id="duration" min="1" max="480" value="25">
+    <br>
+    <button type="submit">Start Session</button>
+</form>
+{% endblock %}

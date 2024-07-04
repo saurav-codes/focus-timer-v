@@ -1,36 +1,39 @@
-<!-- templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Focus Timer{% endblock %}</title>
-    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .dark {
-            @apply bg-gray-800 text-white;
-        }
-    </style>
+    {% block extra_head %}{% endblock %}
 </head>
-<body>
-    <nav class="bg-gray-200 {{ user.userprofile.theme_preference }}:bg-gray-700 p-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="{% url 'home' %}" class="text-xl font-bold">Focus Timer</a>
-            <div>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-blue-600 text-white p-4">
+        <nav class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold">Focus Timer</a>
+            <ul class="flex space-x-4">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'home' %}" class="mr-4">Home</a>
-                    <a href="{% url 'analytics' %}" class="mr-4">Analytics</a>
-                    <a href="{% url 'account_logout' %}" class="mr-4">Logout</a>
-                    <a href="{% url 'toggle_theme' %}" class="mr-4">Toggle Theme</a>
+                    <li><a href="{% url 'start_session' %}" class="hover:underline">Start Session</a></li>
+                    <li><a href="#" class="hover:underline">Dashboard</a></li>
+                    <li><a href="{% url 'account_logout' %}" class="hover:underline">Logout</a></li>
                 {% else %}
-                    <a href="{% url 'account_login' %}">Login with Twitch</a>
+                    <li><a href="{% url 'account_login' %}" class="hover:underline">Login</a></li>
+                    <li><a href="{% url 'account_signup' %}" class="hover:underline">Sign Up</a></li>
                 {% endif %}
-            </div>
-        </div>
-    </nav>
-    <main class="container mx-auto mt-8">
-        {% block content %}{% endblock %}
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container mx-auto flex-grow p-4">
+        {% block content %}
+        {% endblock %}
     </main>
+
+    <footer class="bg-gray-200 text-center p-4 mt-8">
+        <p>&copy; 2024 Focus Timer. All rights reserved.</p>
+    </footer>
+
+    {% block extra_body %}{% endblock %}
 </body>
 </html>

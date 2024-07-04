@@ -16,9 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from apps.realtime_timer.routing import websocket_urlpatterns
+from apps.realtime_timer import views as timer_views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("apps.timer.urls")),
     path("accounts/", include("allauth.urls")),
+    path("", timer_views.homepage, name="homepage"),
+    path("start-session/", timer_views.start_session, name="start_session"),
+    path("session/<int:session_id>/", timer_views.active_session, name="active_session"),
 ]
+
+urlpatterns += websocket_urlpatterns

@@ -1,15 +1,16 @@
+<!-- templates/timer/update_session.html -->
 <h2 class="text-2xl font-semibold mb-4">{{ session.technique }} Technique</h2>
 <div class="mb-4">
     <p>Session Progress:</p>
     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ session.progress }}%"></div>
+        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ session_progress|floatformat:2 }}%"></div>
     </div>
 </div>
 <div class="mb-4">
     <p>Current Interval:</p>
     <p class="text-xl font-bold">{{ current_interval.is_break|yesno:"Break,Focus" }} Time</p>
     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-        <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ current_interval.progress }}%"></div>
+        <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ interval_progress|floatformat:2 }}%"></div>
     </div>
 </div>
 <p>Started: <span id="session-start">{{ session.start_time|timesince }}</span> ago</p>

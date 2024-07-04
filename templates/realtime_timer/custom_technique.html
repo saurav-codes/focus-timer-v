@@ -1,0 +1,26 @@
+<!-- templates/timer/custom_technique.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Custom Technique - Focus Timer{% endblock %}
+
+{% block content %}
+    <h1 class="text-3xl font-bold mb-8">Create Custom Focus Technique</h1>
+    <form method="post" class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="name" class="block text-sm font-medium mb-2">Technique Name:</label>
+            <input type="text" name="name" id="name" class="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500" required>
+        </div>
+        <div class="mb-4">
+            <label for="focus_duration" class="block text-sm font-medium mb-2">Focus Duration (minutes):</label>
+            <input type="number" name="focus_duration" id="focus_duration" min="1" max="240" class="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500" required>
+        </div>
+        <div class="mb-4">
+            <label for="break_duration" class="block text-sm font-medium mb-2">Break Duration (minutes):</label>
+            <input type="number" name="break_duration" id="break_duration" min="1" max="60" class="w-full p-2 border rounded dark:bg-gray-600 dark:border-gray-500" required>
+        </div>
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+            Create Technique
+        </button>
+    </form>
+{% endblock %}

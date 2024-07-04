@@ -42,13 +42,21 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "allauth_ui",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.twitch",
+    "widget_tweaks",
+    "slippers",
     "django_htmx",
-    "apps.timer",
+    "apps.realtime_timer",
+    "django_extensions",
+    "channels",
 ]
+
+ALLAUTH_UI_THEME = "forest"
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -80,8 +88,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "src.wsgi.application"
-
+ASGI_APPLICATION = "src.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -130,7 +145,16 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "assets"]
+STATICFILES_FINDERS = [
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+]
 
+
+if not DEBUG:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+
+STATIC_ROOT = os.path.join(BASE_DIR, "production_static_files")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -156,10 +180,20 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEBUG is False else "http"
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_USERNAME_REQUIRED = True
+# Determines the email verification method during signup
+# – choose one of "mandatory", "optional", or "none".
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_AUTO_SIGNUP = True
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+
+SILENCED_SYSTEM_CHECKS = [
+    "slippers.E001",  # we dont need to add any component.yml file for now
+    # because some day we will make this as custom page
+]

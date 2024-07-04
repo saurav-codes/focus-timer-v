@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class TimerConfig(AppConfig):
+class RealtimeTimerConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.timer"
+    name = "apps.realtime_timer"

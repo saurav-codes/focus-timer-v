@@ -18,3 +18,5 @@ venv_focus_timer/
 # IDE
 .vscode/
 .idea/
+*.DS_Store*
+*static_files/*
