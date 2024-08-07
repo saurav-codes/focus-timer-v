@@ -5,14 +5,15 @@
     <h1 class="text-4xl font-bold mb-4">Welcome to Focus Timer</h1>
     <p class="mb-8">Stay productive with our community-driven focus sessions.</p>
     {% if user.is_authenticated %}
-        <a href="{% url 'start_session' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Start a Session
+        <a href="{% url 'realtime_timer:main-session-view' %}"
+           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+           Session
         </a>
     {% else %}
-        <a href="{% url 'account_login' %}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4">
+        <a  class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4">
             Log In
         </a>
-        <a href="{% url 'account_signup' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        <a  class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
             Sign Up
         </a>
     {% endif %}

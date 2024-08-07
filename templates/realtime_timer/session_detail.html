@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h1>Focus Session</h1>
+<div id="session-id" data-session-id="{{ session.session_id }}"></div>
+
+<div id="timer">00:00:00</div>
+
+<button onclick="focusSessionManager.startTimer()">Start</button>
+<button onclick="focusSessionManager.pauseTimer()">Pause</button>
+<button onclick="focusSessionManager.stopTimer()">Stop</button>
+
+<h2>Tasks</h2>
+<ul id="task-list">
+    {% for task in session.tasks.all %}
+    <li id="task-{{ task.id }}">
+        {{ task.description }}
+        <button onclick="focusSessionManager.toggleTask({{ task.id }})">
+            {% if task.is_completed %}Undo{% else %}Complete{% endif %}
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<form onsubmit="event.preventDefault(); focusSessionManager.createTask(this.task_description.value); this.reset();">
+    <input type="text" name="task_description" required>
+    <button type="submit">Add Task</button>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/focus_session.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,118 @@
+<style>
+    .handle {
+        cursor: move;
+        padding: 5px;
+        background-color: #f0f0f0;
+        margin-right: 10px;
+    }
+    .add-cycle, .delete-cycle {
+        background-color: rgba(1, 1, 1, 0.1);
+        border: none;
+        padding: 5px 10px;
+        margin-left: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        opacity: 0.09;
+    }
+    .add-cycle:hover, .delete-cycle:hover {
+        opacity: 1;
+    }
+    .cycle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>
+<form hx-post="{% url 'realtime_timer:temporary-focus-cycles-generator-view' %}"
+      hx-swap="outerHTML transition:true"
+      hx-target="this">
+    {% if form.errors %}
+        {% for field in form %}
+            {% for error in field.errors %}<div>{{ error|escape }}</div>{% endfor %}
+        {% endfor %}
+    {% endif %}
+    {% csrf_token %}
+    {{ focus_session_form.as_p }}
+    <button class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
+            type="submit">Generate Focus Cycles</button>
+    {% if generated_focus_cycle_data.total_cycles %}
+        <h1>
+            Total Cycles:
+            <span id="total_cycles">{{ generated_focus_cycle_data.total_cycles }}</span>
+        </h1>
+        {% if generated_focus_cycle_data.message %}<p>{{ generated_focus_cycle_data.message }}</p>{% endif %}
+        <div id="focus_cycles_table">
+            {% for cycle in generated_focus_cycle_data.cycles %}
+                <div class="cycle-item">
+                    <span class="handle">☰</span>
+                    <select name="focus_cycle_type">
+                        <option value="FOCUS" {% if cycle.type == "FOCUS" %}selected{% endif %}>Focus</option>
+                        <option value="BREAK" {% if cycle.type == "BREAK" %}selected{% endif %}>Break</option>
+                    </select>
+                    <input type="number"
+                           max="600"
+                           min="0"
+                           name="focus_cycle_duration"
+                           value="{{ cycle.duration }}">
+                    <span>Minutes</span>
+                    <div class="cycle-controls">
+                        <button title="Add Cycle below this one"
+                                type="button"
+                                class="add-cycle"
+                                hx-get="{% url 'realtime_timer:add-cycle-to-cycle-table-view' %}"
+                                hx-target="closest .cycle-item"
+                                hx-swap="afterend transition:true">+</button>
+                        <button title="Delete this Cycle" type="button" class="delete-cycle">-</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <p>
+            Exact time after finishing all cycles: {{ generated_focus_cycle_data.exact_time_after_finishing_all_cycles }} {{ request.user.timezone }}
+        </p>
+        <button hx-post="{% url 'realtime_timer:focus-cycles-and-session-create-view' %}">Start Focus Session</button>
+    {% endif %}
+</form>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"
+        integrity="sha512-TelkP3PCMJv+viMWynjKcvLsQzx6dJHvIGhfqzFtZKgAjKM1YPqcwzzDEoTc/BHjf43PcPzTQOjuTr4YdE8lNQ=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+<script>
+    document.body.addEventListener('htmx:afterSettle', function (event) {
+        const focus_cycles_table = document.getElementById('focus_cycles_table');
+
+        if (focus_cycles_table) {
+            // make the focus_cycles_table draggable
+            new Sortable(focus_cycles_table, {
+                animation: 150,
+                ghostClass: 'blue-background-class',
+                handle: '.handle',
+            });
+
+            // Delete cycle functionality
+            // Use event delegation for delete functionality
+            focus_cycles_table.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-cycle')) {
+                    e.target.closest('.cycle-item').remove();
+                    console.log("cycle deleted");
+                    updateTotalCycles();
+                }
+            });
+
+            function updateTotalCycles() {
+                // Update the total number of cycles
+                const totalCycles = focus_cycles_table.children.length;
+                document.getElementById('total_cycles').textContent = totalCycles;
+                console.log("total cycles updated to: ", totalCycles);
+            }
+
+            // Update total cycles after adding a new cycle
+            if (event.detail.target.classList.contains('cycle-item')) {
+                // this event is triggered when a new cycle is added to the table
+                // using htmx
+                console.log("new cycle added");
+                updateTotalCycles();
+            }
+        }
+    });
+</script>

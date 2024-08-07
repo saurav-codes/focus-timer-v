@@ -167,6 +167,8 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
+AUTH_USER_MODEL = "realtime_timer.User"
+
 SITE_ID = 1
 
 LOGIN_REDIRECT_URL = "/"

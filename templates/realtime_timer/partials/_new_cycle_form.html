@@ -1,0 +1,22 @@
+<div class="cycle-item">
+    <span class="handle">☰</span>
+    <select name="focus_cycle_type">
+        <option value="FOCUS">Focus</option>
+        <option value="BREAK">Break</option>
+    </select>
+    <input type="number"
+           name="focus_cycle_duration"
+           value="25"
+           min="0"
+           max="600">
+    <span>Minutes</span>
+    <div class="cycle-controls">
+        <button title="Add Cycle below this one"
+                type="button"
+                class="add-cycle"
+                hx-get="{% url 'realtime_timer:add-cycle-to-cycle-table-view' %}"
+                hx-target="closest .cycle-item"
+                hx-swap="afterend">+</button>
+        <button title="Delete this Cycle" type="button" class="delete-cycle">-</button>
+    </div>
+</div>
