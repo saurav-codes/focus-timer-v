@@ -62,7 +62,7 @@ class FocusSessionManager {
 
     } else {
       this.stopClientSideTimer();
-      document.getElementById("timer-display").innerHTML = "<h1>Session Completed</h1>";
+      document.getElementById("focus-session-container").innerHTML = "<h1>Session Completed</h1>";
     }
   }
 
