@@ -1,35 +1,20 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block content %}
+<script src="{% static 'js/focus_session.js' %}" defer></script>
 <h1>Focus Session</h1>
-<div id="session-id" data-session-id="{{ session.session_id }}"></div>
+<div id="session-id" data-session-id="{{ focus_session.session_id }}"></div>
 
-<div id="timer">00:00:00</div>
-
-<button onclick="focusSessionManager.startTimer()">Start</button>
-<button onclick="focusSessionManager.pauseTimer()">Pause</button>
-<button onclick="focusSessionManager.stopTimer()">Stop</button>
-
-<h2>Tasks</h2>
-<ul id="task-list">
-    {% for task in session.tasks.all %}
-    <li id="task-{{ task.id }}">
-        {{ task.description }}
-        <button onclick="focusSessionManager.toggleTask({{ task.id }})">
-            {% if task.is_completed %}Undo{% else %}Complete{% endif %}
-        </button>
-    </li>
-    {% endfor %}
-</ul>
-
-<form onsubmit="event.preventDefault(); focusSessionManager.createTask(this.task_description.value); this.reset();">
-    <input type="text" name="task_description" required>
-    <button type="submit">Add Task</button>
-</form>
-
-{% endblock %}
+<div id="timer-display">
+  <button onclick="focusSessionManager.toggleTimer()">Resume/Pause</button>
+  <button onclick="focusSessionManager.stopTimer()">Stop</button>
+  <h2 id="timer_state"></h2>
+  <div id="current-cycle"></div>
+  <div id="remaining-time"></div>
+  <div id="timer-state"></div>
+  <div id="focus-cycles-list"></div>
+</div>
+{% endblock content %}
 
 {% block extra_js %}
-<script src="{% static 'js/focus_session.js' %}"></script>
-{% endblock %}
+{% endblock extra_js %}

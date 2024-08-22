@@ -1,18 +1,21 @@
+# -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import FocusSession, FocusCycle, Task, SessionFollower, User
+from .models import User, FocusSession, FocusPeriod, FocusCycle, Task, SessionFollower
 
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "password",
         "last_login",
         "is_superuser",
         "username",
         "first_name",
         "last_name",
         "email",
+        "is_staff",
         "is_active",
         "date_joined",
         "timezone",
@@ -33,38 +36,60 @@ class FocusSessionAdmin(admin.ModelAdmin):
         "technique",
         "session_id",
         "owner",
-        "duration_hours",
-        "duration_minutes",
         "created_at",
-        "updated_at",
         "current_cycle",
-        "timer_start",
-        "is_running",
-        "total_focus_time",
-        "is_completed",
+        "timer_started_at",
+        "total_time_to_focus",
+        "total_focus_completed",
+        "timer_state",
     )
     list_filter = (
         "owner",
         "created_at",
-        "updated_at",
         "current_cycle",
-        "timer_start",
-        "is_running",
-        "is_completed",
+        "timer_started_at",
     )
     date_hierarchy = "created_at"
+
+
+@admin.register(FocusPeriod)
+class FocusPeriodAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "session",
+        "cycle",
+        "started_at",
+        "ended_at",
+        "duration",
+    )
+    list_filter = ("started_at", "ended_at")
 
 
 @admin.register(FocusCycle)
 class FocusCycleAdmin(admin.ModelAdmin):
     list_display = ("id", "session", "cycle_type", "duration", "order")
-    list_filter = ("session",)
+    raw_id_fields = ("session",)
 
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "session", "description", "is_completed")
-    list_filter = ("session", "is_completed")
+    list_display = (
+        "id",
+        "user",
+        "session",
+        "description",
+        "is_completed",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = (
+        "user",
+        "session",
+        "is_completed",
+        "created_at",
+        "updated_at",
+    )
+    date_hierarchy = "created_at"
 
 
 @admin.register(SessionFollower)

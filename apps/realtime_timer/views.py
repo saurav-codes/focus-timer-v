@@ -5,12 +5,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
-from apps.realtime_timer.business_logic import techniques
 from .business_logic import services, selectors
 from .forms import FocusSessionForm
 
 
-class HomepageView(TemplateView):
+class HomepageView(LoginRequiredMixin, TemplateView):
     template_name = "realtime_timer/homepage.html"
 
 

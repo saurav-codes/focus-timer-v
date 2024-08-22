@@ -20,3 +20,5 @@ venv_focus_timer/
 .idea/
 *.DS_Store*
 *static_files/*
+
+.zed/

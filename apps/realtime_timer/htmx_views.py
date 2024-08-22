@@ -2,6 +2,7 @@
 These views are specifically for HTMX
 as they return response suitable for HTMX
 """
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
@@ -23,10 +24,11 @@ def temporary_focus_cycles_generator_view(request):
     if form.is_valid():
         generated_focus_cycle_data = techniques.generate_focus_cycle_data_based_on_technique_and_duration(
             technique=form.cleaned_data["technique"],
-            duration_hours=form.cleaned_data["duration_hours"],
-            duration_minutes=form.cleaned_data["duration_minutes"],
-            distribute_extra_time_to_existing_focus_sessions=form.cleaned_data[
-                "distribute_extra_time_to_existing_focus_sessions"
+            total_time=form.cleaned_data["total_time_to_focus"],
+            distribute_extra_time_to_long_cycles=form.cleaned_data["distribute_extra_time_to_long_cycles"],
+            distribute_extra_time_to_short_cycles=form.cleaned_data["distribute_extra_time_to_short_cycles"],
+            distribute_extra_time_to_last_25_5_25_5_cycles=form.cleaned_data[
+                "distribute_extra_time_to_last_25_5_25_5_cycles"
             ],
             user=request.user,
         )
@@ -48,6 +50,10 @@ def focus_cycles_and_session_create_view(request):
     """
     form = FocusSessionForm(request.POST)
     fetched_focus_cycle_data_from_post_req = services.fetch_focus_cycles_data_from_post_request(request)
+    if isinstance(fetched_focus_cycle_data_from_post_req, HttpResponse):
+        # there was an error in the form of generated_focus_cycle_data
+        # maybe user entered 0.1 instead of 1 or something like that
+        return fetched_focus_cycle_data_from_post_req
     if form.is_valid():
         # create focus cycles and session
         focus_session = services.create_focus_cycles_and_session(

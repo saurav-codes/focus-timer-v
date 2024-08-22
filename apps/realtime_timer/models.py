@@ -1,7 +1,6 @@
 from django.db import models
 from uuid import uuid4
 from django.utils import timezone
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import AbstractUser
 from timezone_field import TimeZoneField
 
@@ -17,6 +16,10 @@ class FocusSession(models.Model):
     FOCUS_90_TECHNIQUE = "90-Minute Focus Sessions"
     FOCUS_2_HOURS_TECHNIQUE = "2-Hour Focus Blocks"
     FLOWTIME_TECHNIQUE = "Flowtime Technique"
+    CUSTOM_TECHNIQUE = "Custom Technique"
+    TIMER_RUNNING = "running"
+    TIMER_PAUSED = "paused"
+    TIMER_COMPLETED = "completed"
     TECHNIQUE_CHOICES = [
         (CAMEL_TECHNIQUE, CAMEL_TECHNIQUE),
         (POMODORO_TECHNIQUE, POMODORO_TECHNIQUE),
@@ -24,33 +27,53 @@ class FocusSession(models.Model):
         (FOCUS_90_TECHNIQUE, FOCUS_90_TECHNIQUE),
         (FOCUS_2_HOURS_TECHNIQUE, FOCUS_2_HOURS_TECHNIQUE),
         (FLOWTIME_TECHNIQUE, FLOWTIME_TECHNIQUE),
+        (CUSTOM_TECHNIQUE, CUSTOM_TECHNIQUE),
+    ]
+    TIMER_STATE_CHOICES = [
+        (TIMER_RUNNING, TIMER_RUNNING),
+        (TIMER_PAUSED, TIMER_PAUSED),
+        (TIMER_COMPLETED, TIMER_COMPLETED),
     ]
     technique = models.CharField(max_length=30, choices=TECHNIQUE_CHOICES, default=CAMEL_TECHNIQUE)
     session_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="focus_sessions")
-    duration_hours = models.PositiveIntegerField(
-        help_text="Session duration in hours", validators=[MinValueValidator(0), MaxValueValidator(23)], default=0
-    )
-    duration_minutes = models.PositiveIntegerField(
-        help_text="Session duration in minutes", validators=[MinValueValidator(0), MaxValueValidator(59)], default=0
-    )
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     current_cycle = models.ForeignKey(
-        "FocusCycle", null=True, blank=True, on_delete=models.SET_NULL, related_name="current_session"
+        "FocusCycle", on_delete=models.CASCADE, default=None, null=True, blank=True, related_name="current_cycle"
     )
-    timer_start = models.DateTimeField(
-        auto_now_add=True,
-    )
-    is_running = models.BooleanField(default=True)
-    total_focus_time = models.DurationField(default=timezone.timedelta())
-    is_completed = models.BooleanField(default=False)
+    # saving a instance means that the timer has started
+    timer_started_at = models.DateTimeField(auto_now_add=True)
+    # total time user has set to focus
+    total_time_to_focus = models.DurationField(default=timezone.timedelta)
+    # total time spent focusing
+    total_focus_completed = models.DurationField(default=timezone.timedelta)
+    timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)
 
     def __str__(self):
         return f"Session {self.session_id} by {self.owner.username}"
 
 
+class FocusPeriod(models.Model):
+    """
+    One Focus Period b/w each start and pause/stop of FocusSession
+    """
+
+    session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="focus_periods")
+    cycle = models.ForeignKey("FocusCycle", on_delete=models.CASCADE, related_name="focus_cycles")
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(default=timezone.timedelta)
+
+    def __str__(self):
+        return f"Focus Period {self.pk} for {self.session.session_id}"
+
+
 class FocusCycle(models.Model):
+    """
+    This will work as template to execute the focus session
+    in a specific order and duration
+    """
+
     FOCUS = "FOCUS"
     BREAK = "BREAK"
     CYCLE_TYPES = [
@@ -59,19 +82,24 @@ class FocusCycle(models.Model):
     ]
     session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="focus_cycles")
     cycle_type = models.CharField(max_length=5, choices=CYCLE_TYPES)
-    duration = models.PositiveIntegerField(
-        help_text="Duration in minutes", validators=[MinValueValidator(0), MaxValueValidator(600)]
-    )
+    duration = models.DurationField(help_text="Duration in minutes")
     order = models.PositiveIntegerField()
+    is_completed = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.cycle_type} - {self.duration} minutes"
 
+    class Meta:
+        ordering = ["order"]
+
 
 class Task(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")
     session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="tasks")
     description = models.CharField(max_length=255)
     is_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.description

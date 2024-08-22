@@ -188,7 +188,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 # Determines the email verification method during signup
 # – choose one of "mandatory", "optional", or "none".
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
@@ -199,3 +199,5 @@ SILENCED_SYSTEM_CHECKS = [
     "slippers.E001",  # we dont need to add any component.yml file for now
     # because some day we will make this as custom page
 ]
+
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")

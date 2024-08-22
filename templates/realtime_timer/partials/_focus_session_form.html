@@ -12,15 +12,23 @@
         margin-left: 5px;
         cursor: pointer;
         transition: background-color 0.3s ease;
-        opacity: 0.09;
+        opacity: 0.4;
     }
     .add-cycle:hover, .delete-cycle:hover {
         opacity: 1;
     }
+    .add-cycle:hover {
+        background-color: green;
+        color: white;
+    }
+    .delete-cycle:hover {
+        background-color: red;
+        color: white;
+    }
     .cycle-item {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-start;
     }
 </style>
 <form hx-post="{% url 'realtime_timer:temporary-focus-cycles-generator-view' %}"
@@ -40,7 +48,14 @@
             Total Cycles:
             <span id="total_cycles">{{ generated_focus_cycle_data.total_cycles }}</span>
         </h1>
-        {% if generated_focus_cycle_data.message %}<p>{{ generated_focus_cycle_data.message }}</p>{% endif %}
+        <p>
+            Total minutes: {{ generated_focus_cycle_data.total_minutes_distributed }}
+        </p>
+        {% if generated_focus_cycle_data.extra_time_left %}
+        <p>
+            Extra time left: {{ generated_focus_cycle_data.extra_time_left }} minutes
+        </p>
+        {% endif %}
         <div id="focus_cycles_table">
             {% for cycle in generated_focus_cycle_data.cycles %}
                 <div class="cycle-item">

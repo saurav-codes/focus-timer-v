@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import htmx_views
+from .routing import websocket_urlpatterns
 
 
 app_name = "realtime_timer"
@@ -34,3 +35,4 @@ htmx_urlpatterns = [
 ]
 
 urlpatterns += htmx_urlpatterns
+urlpatterns += websocket_urlpatterns
