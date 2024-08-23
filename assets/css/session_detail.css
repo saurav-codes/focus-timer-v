@@ -1,0 +1,148 @@
+.focus-session-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.session-title {
+    color: #4a69bd;
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.btn:focus:not(:active)::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 1;
+    }
+
+    20% {
+        transform: scale(25, 25);
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(40, 40);
+    }
+}
+
+.btn-primary {
+    background-color: #4a69bd;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #3c55a5;
+}
+
+.btn-danger {
+    background-color: #eb4d4b;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #d44040;
+}
+
+.timer-display {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.countdown {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #4a69bd;
+}
+
+.current-cycle {
+    font-size: 1.25rem;
+    color: #555;
+    margin-top: 0.5rem;
+}
+
+.cycles-list {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.cycles-list div {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 1rem;
+    color: #333;
+}
+
+.cycles-list div:last-child {
+    border-bottom: none;
+}
+
+.cycles-list div::before {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.cycles-list div.completed::before {
+    content: "✅";
+}
+
+.cycles-list div.current::before {
+    content: "👉";
+}
+
+.cycles-list div.upcoming::before {
+    content: "⏳";
+}
+
+@media (max-width: 768px) {
+    .focus-session-container {
+        padding: 1rem;
+    }
+
+    .countdown {
+        font-size: 3rem;
+    }
+}

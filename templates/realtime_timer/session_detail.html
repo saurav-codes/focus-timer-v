@@ -1,123 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 {% block extra_head %}
-  <style>
-  .focus-session-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-
-  .session-title {
-      color: #4a69bd;
-      font-size: 2.5rem;
-      text-align: center;
-      margin-bottom: 1.5rem;
-  }
-
-  .timer-controls {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
-  }
-
-  .btn {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-  }
-
-  .btn-primary {
-      background-color: #4a69bd;
-      color: white;
-  }
-
-  .btn-primary:hover {
-      background-color: #3c55a5;
-  }
-
-  .btn-danger {
-      background-color: #eb4d4b;
-      color: white;
-  }
-
-  .btn-danger:hover {
-      background-color: #d44040;
-  }
-
-  .timer-display {
-      text-align: center;
-      margin-bottom: 2rem;
-  }
-
-  .countdown {
-      font-size: 4rem;
-      font-weight: bold;
-      color: #4a69bd;
-  }
-
-  .current-cycle {
-      font-size: 1.25rem;
-      color: #555;
-      margin-top: 0.5rem;
-  }
-
-  .cycles-list {
-      background-color: #f8f9fa;
-      border-radius: 8px;
-      padding: 1rem;
-  }
-
-  .cycles-list div {
-      padding: 0.75rem;
-      border-bottom: 1px solid #e9ecef;
-      font-size: 1rem;
-      color: #333;
-  }
-
-  .cycles-list div:last-child {
-      border-bottom: none;
-  }
-
-  .cycles-list div::before {
-      margin-right: 0.5rem;
-      font-weight: bold;
-  }
-
-  .cycles-list div.completed::before {
-      content: "✅";
-  }
-
-  .cycles-list div.current::before {
-      content: "👉";
-  }
-
-  .cycles-list div.upcoming::before {
-      content: "⏳";
-  }
-
-  @media (max-width: 768px) {
-      .focus-session-container {
-          padding: 1rem;
-      }
-
-      .countdown {
-          font-size: 3rem;
-      }
-  }
-  </style>
+<link rel="stylesheet" href="{% static 'css/session_detail.css' %}">
 {% endblock extra_head %}
 {% block content %}
   <div class="focus-session-container" id="focus-session-container">
     <h1 class="session-title">Focus Session</h1>
+    <div id="session-followers-list">
+    </div>
     <div id="session-id"
          data-session-id="{{ focus_session.session_id }}"
          class="hidden">
@@ -126,14 +16,17 @@
       <div id="remaining-time" class="countdown"></div>
       <div id="current-cycle" class="current-cycle"></div>
     </div>
+    {% if is_session_owner %}
     <div class="timer-controls">
       <button onclick="focusSessionManager.toggleTimer()" class="btn btn-primary">
-        <i class="fas fa-play-pause"></i> Resume/Pause
+        <i id="timer-toggle-icon"></i>
+        <span id="timer-toggle-text"></span>
       </button>
       <button onclick="focusSessionManager.stopTimer()" class="btn btn-danger">
-        <i class="fas fa-stop"></i> Stop
+        <i class="fa-regular fa-circle-stop"></i> Stop
       </button>
     </div>
+    {% endif %}
     <div id="focus-cycles-list" class="cycles-list"></div>
   </div>
   <script src="{% static 'js/focus_session.js' %}" defer></script>

@@ -6,6 +6,7 @@
     <title>{% block title %}Focus Timer{% endblock %}</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
@@ -15,7 +16,7 @@
             <ul class="flex space-x-4">
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'realtime_timer:main-session-view' %}" class="hover:underline">Session</a></li>
-                    <li><a  class="hover:underline">Dashboard</a></li>
+                    <li><a  class="hover:underline">{{ user.username }}</a></li>
                     <li><a  class="hover:underline">Logout</a></li>
                 {% else %}
                     <li><a  class="hover:underline">Login</a></li>

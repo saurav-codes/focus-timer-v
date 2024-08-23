@@ -5,6 +5,28 @@ from .business_logic.services import AsyncTimerService
 from .models import FocusSession
 from channels.db import database_sync_to_async
 
+from functools import wraps
+
+
+def async_session_owner_only(func):
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        user = self.scope["user"]
+
+        @database_sync_to_async
+        def get_session_owner():
+            session = FocusSession.objects.get(session_id=self.session_id)
+            return session.owner
+
+        session_owner = await get_session_owner()
+
+        if user != session_owner:
+            await self.send(text_data=json.dumps({"error": "You are not authorized to perform this action."}))
+            return
+        return await func(self, *args, **kwargs)
+
+    return wrapper
+
 
 class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -45,11 +67,15 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             await self.send_timer_update_to_all_clients()
         if action == "stop_timer":
             await self.stop_timer()
+        if action == "update_session_followers_list":
+            await self.update_session_followers_list()
 
+    @async_session_owner_only
     async def toggle_timer(self):
         await self.timer_service.toggle_timer()
         await self.send_timer_update_to_all_clients()
 
+    @async_session_owner_only
     async def stop_timer(self):
         await self.timer_service.stop_timer()
         await self.send_timer_update_to_all_clients()
@@ -66,3 +92,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
     async def timer_update(self, data):
         await self.send(text_data=json.dumps(data))
+
+    async def update_session_followers_list(self):
+        session_followers = await database_sync_to_async(list)(self.session.session_followers.all())
+        followers_data = [{"id": follower.id, "username": follower.username} for follower in session_followers]
+        await self.send(text_data=json.dumps({"type": "followers_update", "followers": followers_data}))

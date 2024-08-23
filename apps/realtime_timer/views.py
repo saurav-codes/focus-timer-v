@@ -29,10 +29,11 @@ class MainSessionView(LoginRequiredMixin, TemplateView):
 class SessionDetailView(LoginRequiredMixin, View):
     def get(self, request, session_id):
         focus_session = selectors.get_focus_session_by_id(session_id=session_id)
+        is_session_owner = focus_session.owner == request.user
         return render(
             request,
             "realtime_timer/session_detail.html",
-            {"focus_session": focus_session},
+            {"focus_session": focus_session, "is_session_owner": is_session_owner},
         )
 
 

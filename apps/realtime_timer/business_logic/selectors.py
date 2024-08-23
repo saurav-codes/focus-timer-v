@@ -1,7 +1,7 @@
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from ..models import FocusSession, Task
+from ..models import FocusSession, SessionFollower, Task
 
 
 def get_user_sessions(*, user) -> QuerySet[FocusSession]:
@@ -34,3 +34,7 @@ def get_session_will_finish_at_with_timezone(*, session: FocusSession):
     # if user paused the session, then session end time will be calculated based on how much
     # time left in the session and how much total focus time is in the session
     ...
+
+
+def get_session_followers(*, session: FocusSession):
+    return SessionFollower.objects.filter(session=session)
