@@ -20,21 +20,14 @@ def get_session_tasks(*, session: FocusSession) -> QuerySet[Task]:
     return Task.objects.filter(session=session)
 
 
-def get_elapsed_time(*, session: FocusSession) -> timezone.timedelta:
-    if session.is_running:
-        return session.total_focus_time + (timezone.now() - session.timer_start)
-    return session.total_focus_time
-
-
 def get_task_by_id(*, task_id: int) -> Task:
     return get_object_or_404(Task, id=task_id)
 
 
-def get_session_will_finish_at_with_timezone(*, session: FocusSession):
-    # if user paused the session, then session end time will be calculated based on how much
-    # time left in the session and how much total focus time is in the session
-    ...
+def is_user_a_session_follower(*, session: FocusSession, user) -> bool:
+    """Is this user a follower of the given session?"""
+    return session.followers.filter(follower=user).exists()  # type: ignore
 
 
-def get_session_followers(*, session: FocusSession):
+def get_session_followers(*, session: FocusSession) -> QuerySet[SessionFollower]:
     return SessionFollower.objects.filter(session=session)

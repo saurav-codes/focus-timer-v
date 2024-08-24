@@ -41,6 +41,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.session_group_name, self.channel_name)
         await self.accept()
         await self.send_timer_update_to_all_clients()
+        await self.update_session_followers_list_to_all_clients()
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -67,8 +68,9 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             await self.send_timer_update_to_all_clients()
         if action == "stop_timer":
             await self.stop_timer()
-        if action == "update_session_followers_list":
-            await self.update_session_followers_list()
+        if action == "followers_update":
+            print("updating session followers list")
+            await self.update_session_followers_list_to_all_clients()
 
     @async_session_owner_only
     async def toggle_timer(self):
@@ -93,7 +95,24 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def timer_update(self, data):
         await self.send(text_data=json.dumps(data))
 
-    async def update_session_followers_list(self):
-        session_followers = await database_sync_to_async(list)(self.session.session_followers.all())
-        followers_data = [{"id": follower.id, "username": follower.username} for follower in session_followers]
-        await self.send(text_data=json.dumps({"type": "followers_update", "followers": followers_data}))
+    @database_sync_to_async
+    def _get_followers_data(self):
+        followers = self.session.followers.all()
+        followers_data = [
+            {"username": follower.follower.username, "joined_at": follower.joined_at.isoformat()}
+            for follower in followers
+        ]
+        return followers_data
+
+    async def update_session_followers_list_to_all_clients(self):
+        followers_data = await self._get_followers_data()
+        await self.channel_layer.group_send(  # type: ignore
+            self.session_group_name,
+            {
+                "type": "followers_update",
+                "followers": followers_data,
+            },
+        )
+
+    async def followers_update(self, data):
+        await self.send(text_data=json.dumps(data))

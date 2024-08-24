@@ -42,7 +42,7 @@ class FocusSessionManager {
   handleMessage(data) {
     if (data.type === "timer_update") {
       this.display_updated_timer_data(data);
-    } else if (data.type === "update_session_followers_list") {
+    } else if (data.type === "followers_update") {
       this.update_session_followers_list(data);
     }
   }
@@ -173,6 +173,19 @@ class FocusSessionManager {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
       this.timerInterval = null;
+    }
+  }
+
+  update_session_followers_list(data) {
+    const followersList = document.getElementById('session-followers-list');
+    if (followersList) {
+      followersList.innerHTML = '<h3>Session Followers</h3>';
+      followersList.innerHTML += '<ul>';
+      data.followers.forEach(follower => {
+        const joinedDate = new Date(follower.joined_at).toLocaleString();
+        followersList.innerHTML += `<li>${follower.username} (Joined: ${joinedDate})</li>`;
+      });
+      followersList.innerHTML += '</ul>';
     }
   }
 

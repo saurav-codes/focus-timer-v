@@ -10,10 +10,10 @@ urlpatterns = [
     path("", views.HomepageView.as_view(), name="home"),
     path("main-session/", views.MainSessionView.as_view(), name="main-session-view"),
     path("session/<uuid:session_id>/", views.SessionDetailView.as_view(), name="session-detail-view"),
-    path("session/<uuid:session_id>/join/", views.JoinSessionView.as_view(), name="join_session"),
-    path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
-    path("task/create/", views.CreateTaskView.as_view(), name="create_task"),
-    path("task/<int:task_id>/toggle/", views.ToggleTaskView.as_view(), name="toggle_task"),
+    path("session/<uuid:session_id>/join/", views.JoinSessionView.as_view(), name="join-session-view"),
+    # path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    # path("task/create/", views.CreateTaskView.as_view(), name="create_task"),
+    # path("task/<int:task_id>/toggle/", views.ToggleTaskView.as_view(), name="toggle_task"),
 ]
 
 htmx_urlpatterns = [

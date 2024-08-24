@@ -112,6 +112,7 @@ class SessionFollower(models.Model):
 
     class Meta:
         unique_together = ("follower", "session")
+        ordering = ["-joined_at"]
 
     def __str__(self):
         return f"{self.follower.username} following {self.session.session_id}"
