@@ -101,6 +101,10 @@ class FocusSessionManager {
     return `${totalMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
+  // *****************************************
+  // ********** UI Update Functions *********
+  // *****************************************
+
   updateRemainingTimeDisplay(seconds) {
     const remainingTimeElement = document.getElementById('remaining-time');
     remainingTimeElement.textContent = `Remaining Time: ${this.formatTime(seconds)}`;
