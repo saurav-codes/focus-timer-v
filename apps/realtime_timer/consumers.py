@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.shortcuts import get_object_or_404
@@ -30,6 +31,11 @@ def async_session_owner_only(func):
 
 class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        if self.scope["user"].is_anonymous:
+            # no permission for anonymous users
+            await self.close()
+            return
+        self.user = self.scope["user"]
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
         self.session_group_name = f"focus_session_{self.session_id}"
         self.session = await database_sync_to_async(get_object_or_404)(
@@ -46,11 +52,15 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
         # so we will save the session
-        await self.timer_service._save_last_focus_period_of_current_session()
-        if self.session.timer_state == FocusSession.TIMER_RUNNING:
-            # since the timer is running, we will create a new focus period
-            # which will be the last focus period of the session
-            await self.timer_service._create_new_focus_period()
+        if self.user == await self.timer_service._get_session_owner():
+            # only owner can save the session
+            # because other are just followers
+            await self.timer_service._save_last_focus_period_of_current_session()
+            if self.session.timer_state == FocusSession.TIMER_RUNNING:
+                # since the timer is running, we will create a new focus period
+                # which will be the last focus period of the session
+                await self.timer_service._create_new_focus_period()
+                print("created new focus period when user disconnected")
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)
 
     async def receive(self, text_data):
@@ -64,13 +74,15 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             await self.toggle_timer()
         if action == "transition_to_next_cycle":
             print("switching to next cycle")
-            await self.timer_service.transition_to_next_cycle()
-            await self.send_timer_update_to_all_clients()
+            await self.transition_to_next_cycle()
         if action == "stop_timer":
             await self.stop_timer()
         if action == "followers_update":
             print("updating session followers list")
             await self.update_session_followers_list_to_all_clients()
+        if action == "sync_inactive_timer":
+            print("syncing inactive timer")
+            await self.sync_inactive_timer()
 
     @async_session_owner_only
     async def toggle_timer(self):
@@ -80,6 +92,11 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     @async_session_owner_only
     async def stop_timer(self):
         await self.timer_service.stop_timer()
+        await self.send_timer_update_to_all_clients()
+
+    @async_session_owner_only
+    async def transition_to_next_cycle(self):
+        await self.timer_service.transition_to_next_cycle()
         await self.send_timer_update_to_all_clients()
 
     async def send_timer_update_to_all_clients(self):
@@ -116,3 +133,12 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
     async def followers_update(self, data):
         await self.send(text_data=json.dumps(data))
+
+    async def sync_inactive_timer(self):
+        """
+        Sometime OS or Browser pauses the timer from
+        client side and then clientside have not idea
+        about the server time. so we update that time here
+        """
+        print("syncing inactive timer", datetime.now())
+        await self.send_timer_update_to_all_clients()

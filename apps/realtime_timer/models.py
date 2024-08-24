@@ -56,6 +56,10 @@ class FocusSession(models.Model):
 class FocusPeriod(models.Model):
     """
     One Focus Period b/w each start and pause/stop of FocusSession
+    there can be multiple focus periods for a single session and a single
+    focus cycle. for filtering, we can simply filter by session
+    and cycle__cycle_type=FOCUS to get all focus periods for a session
+    and cycle__cycle_type=BREAK to get all break periods for a session
     """
 
     session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="focus_periods")

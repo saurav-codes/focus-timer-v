@@ -1,5 +1,6 @@
 from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
+
 from ..models import FocusPeriod, FocusSession, FocusCycle
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
@@ -89,6 +90,10 @@ class AsyncTimerService:
     @database_sync_to_async
     def _get_timer_state(self):
         return self.session.timer_state
+
+    @database_sync_to_async
+    def _get_session_owner(self):
+        return self.session.owner
 
     @database_sync_to_async
     def _get_current_cycle(self):
@@ -210,7 +215,10 @@ class AsyncTimerService:
             # also get all focus period durations
             all_focus_period_duration = await self._get_all_focus_period_duration_for_current_cycle(current_cycle)
             if current_cycle:
-                data["remaining_time"] = current_cycle.duration.seconds - all_focus_period_duration.seconds
+                remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
+                if remaining_time < 0:
+                    remaining_time = 0
+                data["remaining_time"] = remaining_time
                 data["current_cycle"] = {
                     "type": current_cycle.cycle_type,
                     "order": current_cycle.order,
