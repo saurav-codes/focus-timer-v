@@ -42,6 +42,9 @@
     </div>
     {% endif %}
     <div id="focus-cycles-list" class="cycles-list"></div>
+    <div id="will-finish-at">
+      Session will finish at: {{ will_finish_at }}
+    </div>
   </div>
   <script src="{% static 'js/focus_session.js' %}" defer></script>
 {% endblock content %}

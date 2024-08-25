@@ -26,6 +26,8 @@ class FocusSessionManager {
       this.lastSyncTime = Date.now();
     } else if (data.type === "followers_update") {
       this.update_session_followers_list(data);
+    } else if (data.type === "will_finish_at_update") {
+      this.update_will_finish_at_display(data);
     }
   }
 
@@ -130,6 +132,11 @@ class FocusSessionManager {
 
   resetPageTitle() {
     document.title = this.originalTitle;
+  }
+
+  update_will_finish_at_display(data) {
+    const willFinishAtElement = document.getElementById('will-finish-at');
+    willFinishAtElement.textContent = `Session will finish at: ${data.will_finish_at_timestamp}`;
   }
 
   update_focus_cycles_list(timerDisplayData) {

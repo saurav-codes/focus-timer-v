@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.shortcuts import get_object_or_404
+from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
 from .models import FocusSession
 from channels.db import database_sync_to_async
@@ -10,6 +11,12 @@ from functools import wraps
 
 
 def async_session_owner_only(func):
+    """
+    Decorator to check if the user is the session owner
+    & if not, send an error message to the client
+    because only session owner can perform this action
+    """
+
     @wraps(func)
     async def wrapper(self, *args, **kwargs):
         user = self.scope["user"]
@@ -44,7 +51,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         )
         self.timer_service = AsyncTimerService(session=self.session)
 
-        await self.channel_layer.group_add(self.session_group_name, self.channel_name)
+        await self.channel_layer.group_add(self.session_group_name, self.channel_name)  # type: ignore
         await self.accept()
         await self.send_timer_update_to_all_clients()
         await self.update_session_followers_list_to_all_clients()
@@ -61,7 +68,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 # which will be the last focus period of the session
                 await self.timer_service._create_new_focus_period()
                 print("created new focus period when user disconnected")
-        await self.channel_layer.group_discard(self.session_group_name, self.channel_name)
+        await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
 
     async def receive(self, text_data):
         """
@@ -69,7 +76,6 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         """
         data = json.loads(text_data)
         action = data.get("action")
-        print(action)
         if action == "toggle_timer":
             await self.toggle_timer()
         if action == "transition_to_next_cycle":
@@ -81,13 +87,13 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             print("updating session followers list")
             await self.update_session_followers_list_to_all_clients()
         if action == "sync_inactive_timer":
-            print("syncing inactive timer")
             await self.sync_inactive_timer()
 
     @async_session_owner_only
     async def toggle_timer(self):
         await self.timer_service.toggle_timer()
         await self.send_timer_update_to_all_clients()
+        await self.update_session_will_finish_at_to_all_clients()
 
     @async_session_owner_only
     async def stop_timer(self):
@@ -98,10 +104,11 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def transition_to_next_cycle(self):
         await self.timer_service.transition_to_next_cycle()
         await self.send_timer_update_to_all_clients()
+        await self.update_session_will_finish_at_to_all_clients()
 
     async def send_timer_update_to_all_clients(self):
         timer_display_data = await self.timer_service.get_timer_display_data()
-        await self.channel_layer.group_send(
+        await self.channel_layer.group_send(  # type: ignore
             self.session_group_name,
             {
                 "type": "timer_update",
@@ -121,7 +128,30 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         ]
         return followers_data
 
+    @database_sync_to_async
+    def _get_session_will_finish_at_data(self):
+        will_finish_at = selectors.get_session_will_finish_at(request_user=self.user, session=self.session)
+        return will_finish_at
+
+    async def update_session_will_finish_at_to_all_clients(self):
+        await self.channel_layer.group_send(  # type: ignore
+            self.session_group_name,
+            {
+                "type": "will_finish_at_update",
+            },
+        )
+
+    async def will_finish_at_update(self, data):
+        will_finish_at_timestamp = await self._get_session_will_finish_at_data()
+        await self.send(
+            text_data=json.dumps(
+                {"will_finish_at_timestamp": will_finish_at_timestamp, "type": "will_finish_at_update"}
+            )
+        )
+
     async def update_session_followers_list_to_all_clients(self):
+        # we don't need to calculate followers list for each client
+        # we can just send the followers list to all clients
         followers_data = await self._get_followers_data()
         await self.channel_layer.group_send(  # type: ignore
             self.session_group_name,
@@ -142,3 +172,4 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         """
         print("syncing inactive timer", datetime.now())
         await self.send_timer_update_to_all_clients()
+        await self.update_session_will_finish_at_to_all_clients()

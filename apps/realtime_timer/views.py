@@ -35,12 +35,14 @@ class SessionDetailView(LoginRequiredMixin, View):
         is_session_owner = focus_session.owner == request.user
         followers = selectors.get_session_followers(session=focus_session)
         is_session_follower = selectors.is_user_a_session_follower(session=focus_session, user=request.user)
+        will_finish_at = selectors.get_session_will_finish_at(request_user=request.user, session=focus_session)
         return render(
             request,
             "realtime_timer/session_detail.html",
             {
                 "focus_session": focus_session,
                 "followers": followers,
+                "will_finish_at": will_finish_at,
                 "is_session_owner": is_session_owner,
                 "is_session_follower": is_session_follower,
             },
