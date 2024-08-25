@@ -104,8 +104,8 @@ class AsyncTimerService:
         await database_sync_to_async(FocusPeriod.objects.create)(session=self.session, cycle=current_cycle)
 
     @database_sync_to_async
-    def _get_all_focus_period_duration_for_current_cycle(self, current_cycle) -> timezone.timedelta:
-        total_time_focused_for_finished_fp = (
+    def _get_completed_fp_duration_for_current_cycle(self, current_cycle):
+        completed_fp_duration = (
             FocusPeriod.objects.filter(
                 cycle=current_cycle,
                 ended_at__isnull=False,
@@ -113,11 +113,15 @@ class AsyncTimerService:
             .only("duration")
             .aggregate(total_time_focused=Sum("duration"))["total_time_focused"]
         )
-        if not total_time_focused_for_finished_fp:
+        if not completed_fp_duration:
             # this means that this session is just started which is why it doesn't have
             # any finished sessions yet so we set an 0 timedelta so that it doesn't give
             # any error in calculations
-            total_time_focused_for_finished_fp = timezone.timedelta(0)
+            completed_fp_duration = timezone.timedelta(0)
+        return completed_fp_duration
+
+    @database_sync_to_async
+    def _get_duration_for_unfinished_fp_for_current_cycle(self, current_cycle):
         timer_started_at_for_unfinished_fp = (
             FocusPeriod.objects.filter(
                 cycle=current_cycle,
@@ -130,25 +134,48 @@ class AsyncTimerService:
             duration_for_unfinished_fp = timezone.now() - timer_started_at_for_unfinished_fp.started_at
         else:
             duration_for_unfinished_fp = timezone.timedelta(0)
-        return duration_for_unfinished_fp + total_time_focused_for_finished_fp
+        return duration_for_unfinished_fp
 
-    @database_sync_to_async
-    def _save_last_focus_period_of_current_session(self):
+    async def _get_all_focus_period_duration_for_current_cycle(self, current_cycle) -> timezone.timedelta:
+        total_time_focused_for_finished_fp = await self._get_completed_fp_duration_for_current_cycle(current_cycle)
+        duration_for_unfinished_fp = await self._get_duration_for_unfinished_fp_for_current_cycle(current_cycle)
+        return total_time_focused_for_finished_fp + duration_for_unfinished_fp
+
+    async def _save_last_focus_period_of_current_session(self):
         """
         this function is used to end the last focus period of the current session
         it's used when the timer is paused or stopped or when the user is done with the current cycle
         so we save the time for the last focus period.
         """
         # get the last focus period
-        last_focus_period = self.session.focus_periods.last()  # type:ignore
+        last_focus_period = await database_sync_to_async(self.session.focus_periods.last)()  # type:ignore
         if last_focus_period and not last_focus_period.ended_at:
             # if the last focus period is not ended, end it
             last_focus_period.ended_at = timezone.now()
-            last_focus_period.duration = last_focus_period.ended_at - last_focus_period.started_at
-            last_focus_period.save()
+            # calculate the duration of the last focus period
+            fp_duration = last_focus_period.ended_at - last_focus_period.started_at
+            # sometime this method is called after a long time like
+            # when tab/browser sleeps & as they get active again, it's
+            # more time passed already then it was in cycle.
+            max_time_to_save_for_focus_period = await self._get_max_time_to_save_for_focus_period()
+            last_focus_period.duration = min(fp_duration, max_time_to_save_for_focus_period)
+            await last_focus_period.asave()
             print(
                 "last focus period ended with duration: ", last_focus_period.duration, "and id: ", last_focus_period.id
             )
+
+    async def _get_max_time_to_save_for_focus_period(self):
+        """
+        this function returns the max duration we can save to current focus period
+        while keeping in mind that sometime this method is called after a long time
+        like when tab/browser sleeps & as they get active again, it's more time
+        passed already then it was in cycle duration. so we need to make sure that
+        we don't save more time then the cycle duration time left in the current cycle.
+        """
+        # first get all focus periods for the current cycle
+        current_cycle = await self._get_current_cycle()
+        completed_fp_duration = await self._get_completed_fp_duration_for_current_cycle(current_cycle)
+        return current_cycle.duration - completed_fp_duration
 
     async def _calculate_total_focus_completed(self):
         # either choose the last resumed time or the started time
@@ -226,7 +253,7 @@ class AsyncTimerService:
                 }
                 # also add remaining cycles data
                 focus_cycles = await database_sync_to_async(list)(
-                    self.session.focus_cycles.all()
+                    self.session.focus_cycles.all()  # type: ignore
                 )  # get all cycles after current one
                 for focus_cycle in focus_cycles:
                     data["focus_cycles"][str(focus_cycle.order)] = {
