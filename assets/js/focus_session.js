@@ -118,6 +118,7 @@ class FocusSessionManager {
 
   startClientSideTimer(timerDisplayData) {
     this.stopClientSideTimer(); // Clear any existing interval
+    const endTime = Date.now() + timerDisplayData.remaining_time * 1000;
     this.remainingTime = timerDisplayData.remaining_time;
     this.updateRemainingTimeDisplay(this.remainingTime);
 
@@ -127,7 +128,8 @@ class FocusSessionManager {
         this.transitionToNextCycle();
         return;
       }
-      this.remainingTime--;
+      const currentTime = Date.now();
+      this.remainingTime = Math.round((endTime - currentTime) / 1000);
       this.updateRemainingTimeDisplay(this.remainingTime);
       this.updatePageTitleToCurrentCycle(this.remainingTime, timerDisplayData.current_cycle.type);
 
