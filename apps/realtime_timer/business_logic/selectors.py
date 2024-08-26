@@ -69,4 +69,4 @@ def get_session_will_finish_at(*, request_user, session: FocusSession):
     # Make the datetime naive, then apply user timezone
     time_user_will_finish_at = time_user_will_finish_at.replace(tzinfo=None)
     formatted_time = date_format(time_user_will_finish_at, format="F j, Y, g:i A")
-    return formatted_time
+    return f"{formatted_time} {user.timezone}"  # type: ignore
