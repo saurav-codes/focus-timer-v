@@ -112,9 +112,36 @@ class FocusSessionManager {
 
   formatTime(seconds) {
     const totalMinutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const remainingSeconds = seconds % 60; // remainder of seconds after dividing by 60
     return `${totalMinutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
+
+  startClientSideTimer(timerDisplayData) {
+    this.stopClientSideTimer(); // Clear any existing interval
+    this.remainingTime = timerDisplayData.remaining_time;
+    this.updateRemainingTimeDisplay(this.remainingTime);
+
+    this.timerInterval = setInterval(() => {
+      if (this.remainingTime <= 0) {
+        this.stopClientSideTimer();
+        this.transitionToNextCycle();
+        return;
+      }
+      this.remainingTime--;
+      this.updateRemainingTimeDisplay(this.remainingTime);
+      this.updatePageTitleToCurrentCycle(this.remainingTime, timerDisplayData.current_cycle.type);
+
+    }, 1000);
+  }
+
+  stopClientSideTimer() {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+      console.log("stopped client side timer");
+    }
+  }
+
 
   // *****************************************
   // ********** UI Update Functions *********
@@ -122,7 +149,8 @@ class FocusSessionManager {
 
   updateRemainingTimeDisplay(seconds) {
     const remainingTimeElement = document.getElementById('remaining-time');
-    remainingTimeElement.textContent = `Remaining Time: ${this.formatTime(seconds)}`;
+    let formattedTime = this.formatTime(seconds);
+    remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
   }
 
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
@@ -143,14 +171,14 @@ class FocusSessionManager {
     const focusCyclesListElement = document.getElementById('focus-cycles-list');
     focusCyclesListElement.innerHTML = ''; // Clear existing content
     Object.entries(timerDisplayData.focus_cycles).forEach(([order, cycle]) => {
-        const cycleElement = document.createElement('div');
-        let completed_cycle_prefix = "ᛜ";
-        if (cycle.is_completed) {
-          completed_cycle_prefix = "✅";
-        } else if (cycle.order == timerDisplayData.current_cycle.order) {
-          completed_cycle_prefix = "👉";
-        }
-        cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
+      const cycleElement = document.createElement('div');
+      let completed_cycle_prefix = "ᛜ";
+      if (cycle.is_completed) {
+        completed_cycle_prefix = "✅";
+      } else if (cycle.order == timerDisplayData.current_cycle.order) {
+        completed_cycle_prefix = "👉";
+      }
+      cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
       focusCyclesListElement.appendChild(cycleElement);
     });
   }
@@ -181,33 +209,6 @@ class FocusSessionManager {
     }
   }
 
-
-  startClientSideTimer(timerDisplayData) {
-    this.stopClientSideTimer(); // Clear any existing interval
-    this.remainingTime = timerDisplayData.remaining_time;
-    this.updateRemainingTimeDisplay(this.remainingTime);
-
-    this.timerInterval = setInterval(() => {
-      if (this.remainingTime <= 0) {
-        this.stopClientSideTimer();
-        this.transitionToNextCycle();
-        return;
-      }
-      this.remainingTime--;
-      this.updateRemainingTimeDisplay(this.remainingTime);
-      this.updatePageTitleToCurrentCycle(this.remainingTime, timerDisplayData.current_cycle.type);
-
-    }, 1000);
-  }
-
-  stopClientSideTimer() {
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-      console.log("stopped client side timer");
-    }
-  }
-
   update_session_followers_list(data) {
     const followersList = document.getElementById('session-followers-list');
     if (followersList) {
@@ -229,7 +230,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
   const sessionId = document.getElementById("session-id").dataset.sessionId;
   focusSessionManager = new FocusSessionManager(sessionId);
 
-  document.addEventListener('visibilitychange', function() {
+  document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
       const currentTime = Date.now();
       // Convert to seconds
