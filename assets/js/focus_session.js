@@ -68,7 +68,13 @@ class FocusSessionManager {
   // *****************************************
 
 
-  join_session(user_id) {
+  join_session() {
+    const joinSessionButton = document.getElementById('join-session-button');
+    if (joinSessionButton) {
+      // delete the join session button
+      // since we are already in the session
+      joinSessionButton.remove();
+    }
     this.send_action_to_server(
       { "action": "join_session"}
     )
@@ -226,7 +232,6 @@ class FocusSessionManager {
 
   update_session_followers_list(data) {
     const followersContainer = document.getElementById('session-followers-container');
-    console.log("the data recd for followers", data);
     if (followersContainer) {
       followersContainer.innerHTML = '<h3>Session Followers</h3>';
       followersContainer.innerHTML += '<ul>';

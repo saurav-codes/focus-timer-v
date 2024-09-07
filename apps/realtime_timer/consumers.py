@@ -54,6 +54,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.session_group_name, self.channel_name)  # type: ignore
         await self.accept()
         await self.send_timer_update_to_all_clients()
+        await self.update_session_followers_list_to_all_clients()
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -127,7 +128,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(data))
 
     @database_sync_to_async
-    def _get_followers_data(self):
+    def _get_followers_data(self) -> list[dict[str, str]]:
         followers = self.session.followers.all()
         followers_data = [
             {"username": follower.follower.username, "joined_at": follower.joined_at.isoformat()}
