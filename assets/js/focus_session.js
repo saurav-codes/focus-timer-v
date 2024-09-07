@@ -160,9 +160,10 @@ class FocusSessionManager {
 
   updateRemainingTimeDisplay(seconds) {
     const remainingTimeElement = document.getElementById('remaining-time');
-    let formattedTime = this.formatTime(seconds);
-    remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
-    // this.lastTimeClientSideTimerUpdated = Date.now();
+    if (remainingTimeElement) {
+      let formattedTime = this.formatTime(seconds);
+      remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
+    }
   }
 
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
