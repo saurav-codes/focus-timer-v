@@ -6,21 +6,18 @@
 {% block content %}
   <div class="focus-session-container" id="focus-session-container">
     <h1 class="session-title">Focus Session</h1>
-    {% if not is_session_owner and not is_session_follower %}
-      <form method="post" action="{% url 'realtime_timer:join-session-view' focus_session.session_id %}">
-        {% csrf_token %}
-        <button type="submit">Join Session</button>
-      </form>
-    {% else %}
-    <div id="session-followers-list">
-      <h3>Session Followers</h3>
-      <ul>
-      {% for follower in followers %}
-          <li>{{ follower.follower.username }} (Joined: {{ follower.joined_at|date:"F d, Y H:i" }})</li>
-      {% endfor %}
-      </ul>
+    <div id="session-followers-container">
+      {% if not is_session_owner and not is_session_follower %}
+        <button onclick='focusSessionManager.join_session({{ user.id }})'>Join Session</button>
+      {% else %}
+        <h3>Session Followers </h3>
+        <ul>
+          {% for follower in followers %}
+            <li>{{ follower.follower.username }} (Joined: {{ follower.joined_at|date:"F d, Y H:i" }})</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     </div>
-    {% endif %}
 
     <div id="session-id"
          data-session-id="{{ focus_session.session_id }}"

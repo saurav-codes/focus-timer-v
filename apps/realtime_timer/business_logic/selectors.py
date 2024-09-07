@@ -66,7 +66,6 @@ def get_session_will_finish_at(*, request_user, session: FocusSession):
     total_time_left_to_focus = all_cycles_total_duration - total_time_focused
     # time user will finish the session at
     time_user_will_finish_at = user_timezone + total_time_left_to_focus
-    # Make the datetime naive, then apply user timezone
-    time_user_will_finish_at = time_user_will_finish_at.replace(tzinfo=None)
+    # format the time in readable format
     formatted_time = date_format(time_user_will_finish_at, format="F j, Y, g:i A")
     return f"{formatted_time} {user.timezone}"  # type: ignore

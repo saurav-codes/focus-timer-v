@@ -39,7 +39,6 @@ class FocusSessionAdmin(admin.ModelAdmin):
         "created_at",
         "current_cycle",
         "timer_started_at",
-        "total_time_to_focus",
         "total_focus_completed",
         "timer_state",
     )

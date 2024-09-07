@@ -19,6 +19,7 @@ class FocusSessionManager {
 
   handleMessage(data) {
     if (data.type === "timer_update") {
+      console.log("got timer update from server");
       this.display_updated_timer_data(data);
       // since we got this time from server
       // it is synced with server time
@@ -33,7 +34,7 @@ class FocusSessionManager {
 
   transitionToNextCycle() {
     console.log("transitioning to next cycle");
-    this.send_data_to_server(
+    this.send_action_to_server(
       { "action": "transition_to_next_cycle" }
     )
   }
@@ -44,29 +45,37 @@ class FocusSessionManager {
     // and backend will send updated timer details
     // so here we can't stop the client side timer
     this.stopClientSideTimer();
-    this.send_data_to_server(
+    this.send_action_to_server(
       { "action": "toggle_timer" }
     )
   }
 
   stopTimer() {
-    this.send_data_to_server(
+    this.send_action_to_server(
       { "action": "stop_timer" }
     )
   }
 
   sync_inactive_timer() {
-    this.send_data_to_server(
+    this.send_action_to_server(
       { "action": "sync_inactive_timer" }
     )
   }
+
 
   // *****************************************
   // ********** Helper Functions **********
   // *****************************************
 
-  send_data_to_server(data) {
-    this.socket.send(JSON.stringify(data));
+
+  join_session(user_id) {
+    this.send_action_to_server(
+      { "action": "join_session"}
+    )
+  }
+
+  send_action_to_server(event_type) {
+    this.socket.send(JSON.stringify(event_type));
   }
 
   reloadWindowAfterDelay() {
@@ -80,9 +89,6 @@ class FocusSessionManager {
   }
 
   display_updated_timer_data(data) {
-    console.log(data);
-    console.log("got this data from backend");
-
     const timerDisplayData = data.timer_display_data;
     this.stopClientSideTimer(); // Clear any existing interval
     this.resetPageTitle();  // reset page title incase it was changed
@@ -124,6 +130,9 @@ class FocusSessionManager {
 
     this.timerInterval = setInterval(() => {
       if (this.remainingTime <= 0) {
+        // if current focus cycle is completed
+        // then we need to transition to next cycle
+        // and also stop the current cycle timer
         this.stopClientSideTimer();
         this.transitionToNextCycle();
         return;
@@ -153,6 +162,7 @@ class FocusSessionManager {
     const remainingTimeElement = document.getElementById('remaining-time');
     let formattedTime = this.formatTime(seconds);
     remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
+    // this.lastTimeClientSideTimerUpdated = Date.now();
   }
 
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
@@ -166,7 +176,9 @@ class FocusSessionManager {
 
   update_will_finish_at_display(data) {
     const willFinishAtElement = document.getElementById('will-finish-at');
-    willFinishAtElement.textContent = `Session will finish at: ${data.will_finish_at_timestamp}`;
+    if (willFinishAtElement) {
+      willFinishAtElement.textContent = `Session will finish at: ${data.will_finish_at_timestamp}`;
+    }
   }
 
   update_focus_cycles_list(timerDisplayData) {
@@ -212,15 +224,16 @@ class FocusSessionManager {
   }
 
   update_session_followers_list(data) {
-    const followersList = document.getElementById('session-followers-list');
-    if (followersList) {
-      followersList.innerHTML = '<h3>Session Followers</h3>';
-      followersList.innerHTML += '<ul>';
+    const followersContainer = document.getElementById('session-followers-container');
+    console.log("the data recd for followers", data);
+    if (followersContainer) {
+      followersContainer.innerHTML = '<h3>Session Followers</h3>';
+      followersContainer.innerHTML += '<ul>';
       data.followers.forEach(follower => {
         const joinedDate = new Date(follower.joined_at).toLocaleString();
-        followersList.innerHTML += `<li>${follower.username} (Joined: ${joinedDate})</li>`;
+        followersContainer.innerHTML += `<li>${follower.username} (Joined: ${joinedDate})</li>`;
       });
-      followersList.innerHTML += '</ul>';
+      followersContainer.innerHTML += '</ul>';
     }
   }
 

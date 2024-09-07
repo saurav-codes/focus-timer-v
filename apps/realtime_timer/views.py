@@ -49,18 +49,6 @@ class SessionDetailView(LoginRequiredMixin, View):
         )
 
 
-class JoinSessionView(LoginRequiredMixin, View):
-    def post(self, request, session_id):
-        session = get_object_or_404(FocusSession, session_id=session_id)
-        SessionFollower.objects.get_or_create(follower=request.user, session=session)
-        # Trigger follower update
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(  # type: ignore
-            f"focus_session_{session_id}", {"type": "followers_update"}
-        )
-        return redirect("realtime_timer:session-detail-view", session_id=session_id)
-
-
 # class DashboardView(LoginRequiredMixin, ListView):
 #     template_name = "dashboard.html"
 #     context_object_name = "user_sessions"

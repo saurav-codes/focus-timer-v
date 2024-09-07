@@ -49,12 +49,11 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             FocusSession,
             session_id=self.session_id,
         )
-        self.timer_service = AsyncTimerService(session=self.session)
+        self.timer_service = AsyncTimerService(session=self.session, user=self.user)
 
         await self.channel_layer.group_add(self.session_group_name, self.channel_name)  # type: ignore
         await self.accept()
         await self.send_timer_update_to_all_clients()
-        await self.update_session_followers_list_to_all_clients()
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -79,7 +78,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         if action == "toggle_timer":
             await self.toggle_timer()
         if action == "transition_to_next_cycle":
-            print("switching to next cycle")
+            print(f"switching to next cycle for user {self.user.username}")
             await self.transition_to_next_cycle()
         if action == "stop_timer":
             await self.stop_timer()
@@ -87,7 +86,11 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             print("updating session followers list")
             await self.update_session_followers_list_to_all_clients()
         if action == "sync_inactive_timer":
+            print(f"syncing inactive timer for {self.user.username}")
             await self.sync_inactive_timer()
+        if action == "join_session":
+            print(f"user {self.user.username} joined session")
+            await self.join_session(self.user)
 
     @async_session_owner_only
     async def toggle_timer(self):
@@ -115,6 +118,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 "timer_display_data": timer_display_data,
             },
         )
+
+    async def join_session(self, user):
+        await self.timer_service.join_session(user)
+        await self.update_session_followers_list_to_all_clients()
 
     async def timer_update(self, data):
         await self.send(text_data=json.dumps(data))

@@ -24,7 +24,7 @@ def temporary_focus_cycles_generator_view(request):
     if form.is_valid():
         generated_focus_cycle_data = techniques.generate_focus_cycle_data_based_on_technique_and_duration(
             technique=form.cleaned_data["technique"],
-            total_time=form.cleaned_data["total_time_to_focus"],
+            total_time=form.cleaned_data["duration_hours"] * 60 + form.cleaned_data["duration_minutes"],
             distribute_extra_time_to_long_cycles=form.cleaned_data["distribute_extra_time_to_long_cycles"],
             distribute_extra_time_to_short_cycles=form.cleaned_data["distribute_extra_time_to_short_cycles"],
             distribute_extra_time_to_last_25_5_25_5_cycles=form.cleaned_data[

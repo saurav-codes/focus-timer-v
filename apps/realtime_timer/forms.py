@@ -40,11 +40,6 @@ class FocusSessionForm(forms.ModelForm):
             "distribute_extra_time_to_last_25_5_25_5_cycles",
         ]
 
-    def clean(self) -> dict[str, Any]:
-        cleaned_data = super().clean()
-        cleaned_data["total_time_to_focus"] = cleaned_data["duration_hours"] * 60 + cleaned_data["duration_minutes"]
-        return cleaned_data
-
     def clean_duration_hours(self) -> int:
         duration_hours = self.cleaned_data["duration_hours"]
         if not isinstance(duration_hours, int):

@@ -43,8 +43,6 @@ class FocusSession(models.Model):
     )
     # saving a instance means that the timer has started
     timer_started_at = models.DateTimeField(auto_now_add=True)
-    # total time user has set to focus
-    total_time_to_focus = models.DurationField(default=timezone.timedelta)
     # total time spent focusing
     total_focus_completed = models.DurationField(default=timezone.timedelta)
     timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)

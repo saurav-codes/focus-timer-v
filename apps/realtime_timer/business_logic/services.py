@@ -1,7 +1,7 @@
 from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
 
-from ..models import FocusPeriod, FocusSession, FocusCycle
+from ..models import FocusPeriod, FocusSession, FocusCycle, SessionFollower
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.utils import timezone
@@ -31,11 +31,9 @@ def create_focus_cycles_and_session(
     }
     note: saving a new object will start the timer immediately
     """
-    total_time_to_focus = focus_session_form_cleaned_data["total_time_to_focus"]
     focus_session = FocusSession.objects.create(
         owner=owner,
         technique=focus_session_form_cleaned_data["technique"],
-        total_time_to_focus=timezone.timedelta(total_time_to_focus),
     )
 
     # Create focus cycles
@@ -84,8 +82,9 @@ def fetch_focus_cycles_data_from_post_request(request: HttpRequest) -> dict | Ht
 
 
 class AsyncTimerService:
-    def __init__(self, session: FocusSession) -> None:
+    def __init__(self, session: FocusSession, user) -> None:
         self.session = session
+        self.user = user
 
     @database_sync_to_async
     def _get_timer_state(self):
@@ -151,7 +150,7 @@ class AsyncTimerService:
         last_focus_period = await database_sync_to_async(self.session.focus_periods.last)()  # type:ignore
         if last_focus_period and not last_focus_period.ended_at:
             # if the last focus period is not ended, end it
-            last_focus_period.ended_at = timezone.now()
+            last_focus_period.ended_at = timezone.now().astimezone(self.user.timezone)
             # calculate the duration of the last focus period
             fp_duration = last_focus_period.ended_at - last_focus_period.started_at
             # sometime this method is called after a long time like
@@ -160,6 +159,7 @@ class AsyncTimerService:
             max_time_to_save_for_focus_period = await self._get_max_time_to_save_for_focus_period()
             last_focus_period.duration = min(fp_duration, max_time_to_save_for_focus_period)
             await last_focus_period.asave()
+            print(f"choosing a minimum b/w {fp_duration} and {max_time_to_save_for_focus_period}")
             print(
                 "last focus period ended with duration: ", last_focus_period.duration, "and id: ", last_focus_period.id
             )
@@ -203,6 +203,7 @@ class AsyncTimerService:
         we will just calculate all the time spent and end the last focus period
         and mark the session as completed
         """
+        print(f"stopping timer for user {self.user.username} with timezone {self.user.timezone}")
         await self.pause_timer()  # make sure the last focus period is ended
         self.session.total_focus_completed = await self._calculate_total_focus_completed()
         self.session.timer_state = FocusSession.TIMER_COMPLETED
@@ -210,18 +211,28 @@ class AsyncTimerService:
 
     async def resume_timer(self):
         if self.session.timer_state == FocusSession.TIMER_PAUSED:
-            print("timer is paused so resuming it")
             # just add a new focus period
             await self._create_new_focus_period()
             self.session.timer_state = FocusSession.TIMER_RUNNING
             await self.session.asave()
 
     async def toggle_timer(self):
+        print(f"toggling timer for {self.user.username}")
         timer_state = await self._get_timer_state()
+        print(f"timer state: {timer_state} for {self.user.username}")
         if timer_state == FocusSession.TIMER_RUNNING:
+            print(f"pausing timer for {self.user.username}")
             await self.pause_timer()
         elif timer_state == FocusSession.TIMER_PAUSED:
+            print(f"resuming timer for {self.user.username}")
             await self.resume_timer()
+
+    @database_sync_to_async
+    def _add_user_to_session_followers(self, user):
+        return SessionFollower.objects.create(follower=user, session=self.session)
+
+    async def join_session(self, user):
+        await self._add_user_to_session_followers(user)
 
     async def get_timer_display_data(self):
         """
