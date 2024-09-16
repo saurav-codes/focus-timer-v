@@ -3,7 +3,7 @@ class FocusSessionManager {
   constructor(sessionId) {
     this.sessionId = sessionId;
     this.socket = new WebSocket(
-      `ws://${window.location.host}/ws/focus_session/${sessionId}/`,
+      `wss://${window.location.host}/ws/focus_session/${sessionId}/`,
     );
     this.socket.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
     this.socket.onclose = (e) => this.reloadWindowAfterDelay();
@@ -112,8 +112,9 @@ class FocusSessionManager {
 
       // Update current cycle information
       const currentCycleElement = document.getElementById('current-cycle');
-      currentCycleElement.textContent = `Current Cycle: ${timerDisplayData.current_cycle.type} - ${this.formatTime(timerDisplayData.current_cycle.duration_seconds)}`;
-
+      if ( currentCycleElement ) {
+        currentCycleElement.textContent = `Current Cycle: ${timerDisplayData.current_cycle.type} - ${this.formatTime(timerDisplayData.current_cycle.duration_seconds)}`;
+      }
       // Update focus cycles list
       this.update_focus_cycles_list(timerDisplayData);
 
@@ -190,18 +191,20 @@ class FocusSessionManager {
 
   update_focus_cycles_list(timerDisplayData) {
     const focusCyclesListElement = document.getElementById('focus-cycles-list');
-    focusCyclesListElement.innerHTML = ''; // Clear existing content
-    Object.entries(timerDisplayData.focus_cycles).forEach(([order, cycle]) => {
-      const cycleElement = document.createElement('div');
-      let completed_cycle_prefix = "ᛜ";
-      if (cycle.is_completed) {
-        completed_cycle_prefix = "✅";
-      } else if (cycle.order == timerDisplayData.current_cycle.order) {
-        completed_cycle_prefix = "👉";
-      }
-      cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
-      focusCyclesListElement.appendChild(cycleElement);
-    });
+    if (focusCyclesListElement) {
+      focusCyclesListElement.innerHTML = ''; // Clear existing content
+      Object.entries(timerDisplayData.focus_cycles).forEach(([order, cycle]) => {
+        const cycleElement = document.createElement('div');
+        let completed_cycle_prefix = "ᛜ";
+        if (cycle.is_completed) {
+          completed_cycle_prefix = "✅";
+        } else if (cycle.order == timerDisplayData.current_cycle.order) {
+          completed_cycle_prefix = "👉";
+        }
+        cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
+        focusCyclesListElement.appendChild(cycleElement);
+      });
+    }
   }
 
   update_timer_toggle_icon_to_play() {

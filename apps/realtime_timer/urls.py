@@ -7,7 +7,7 @@ from .routing import websocket_urlpatterns
 app_name = "realtime_timer"
 
 urlpatterns = [
-    path("", views.HomepageView.as_view(), name="home"),
+    path("", views.HomepageView.as_view(), name="homepage-view"),
     path("main-session/", views.MainSessionView.as_view(), name="main-session-view"),
     path("session/<uuid:session_id>/", views.SessionDetailView.as_view(), name="session-detail-view"),
     # path("dashboard/", views.DashboardView.as_view(), name="dashboard"),

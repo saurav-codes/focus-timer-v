@@ -15,6 +15,11 @@ from .forms import FocusSessionForm
 class HomepageView(LoginRequiredMixin, TemplateView):
     template_name = "realtime_timer/homepage.html"
 
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context_data = super().get_context_data(**kwargs)
+        context_data["user_sessions"] = FocusSession.objects.all()[:10]
+        return context_data
+
 
 class MainSessionView(LoginRequiredMixin, TemplateView):
     """

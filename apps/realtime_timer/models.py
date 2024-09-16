@@ -1,5 +1,6 @@
 from django.db import models
 from uuid import uuid4
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from timezone_field import TimeZoneField
@@ -47,8 +48,18 @@ class FocusSession(models.Model):
     total_focus_completed = models.DurationField(default=timezone.timedelta)
     timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)
 
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"Session {self.session_id} by {self.owner.username}"
+
+    def get_absolute_url(self):
+        return reverse("realtime_timer:session-detail-view", kwargs={"session_id": self.session_id})
+
+    @property
+    def label(self):
+        return f"Session {self.session_id}"
 
 
 class FocusPeriod(models.Model):

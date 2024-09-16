@@ -17,5 +17,12 @@
             Sign Up
         </a>
     {% endif %}
+    <hr>
+    {% for session in user_sessions %}
+    <div class="flex flex-col">
+        <a href="{{ session.get_absolute_url }}">{{ session.label }}</a>
+        <p>{{ session.created_at|date:"M j, Y" }}</p>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

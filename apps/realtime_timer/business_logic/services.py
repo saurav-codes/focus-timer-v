@@ -163,6 +163,8 @@ class AsyncTimerService:
             print(
                 "last focus period ended with duration: ", last_focus_period.duration, "and id: ", last_focus_period.id
             )
+            if fp_duration > max_time_to_save_for_focus_period:
+                print(f"‼️⚠️‼️⚠️‼️⚠️‼️⚠️‼️⚠️‼️⚠️ {fp_duration - max_time_to_save_for_focus_period} lag detected.")
 
     async def _get_max_time_to_save_for_focus_period(self):
         """
