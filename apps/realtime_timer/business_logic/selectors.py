@@ -13,10 +13,6 @@ def get_user_sessions(*, user) -> QuerySet[FocusSession]:
     return FocusSession.objects.filter(owner=user).order_by("-created_at")
 
 
-def get_followed_sessions(*, user) -> QuerySet[FocusSession]:
-    return FocusSession.objects.filter(followers__follower=user).order_by("-created_at")
-
-
 def get_focus_session_by_id(*, session_id) -> FocusSession:
     return get_object_or_404(FocusSession, session_id=session_id)
 

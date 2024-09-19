@@ -1,4 +1,5 @@
 from typing import Any
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
@@ -8,9 +9,11 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 from apps.realtime_timer.models import FocusSession
+from django.contrib import messages
 
 from .business_logic import selectors
 from .forms import FocusSessionForm
+from django_htmx.http import HttpResponseClientRedirect
 
 
 class HomepageView(LoginRequiredMixin, TemplateView):
@@ -63,10 +66,17 @@ class SessionDetailView(View):
 
     def post(self, request, session_id):
         username = request.POST.get("username", None)
-        # save username in session storage
-        request.session["username"] = username
+        # check if username is already in session followers
+        session_followers = selectors.get_focus_session_by_id(session_id=session_id).followers.keys()
+        if username in session_followers:
+            # username is already in session followers
+            # so we will redirect to session detail page
+            return HttpResponse("Username already in session", status=200)
+        else:
+            # save username in session storage
+            request.session["username"] = username
         session_detail_url = reverse("realtime_timer:session-detail-view", args=[session_id])
-        return redirect(session_detail_url)
+        return HttpResponseClientRedirect(session_detail_url)
 
 
 # class DashboardView(LoginRequiredMixin, ListView):

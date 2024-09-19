@@ -65,6 +65,11 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 "user_type": "guest" if self.user.is_anonymous else "authenticated",
             }
             await self.session.asave()
+            await self._refresh_instance(self.session)
+
+    @database_sync_to_async
+    def _refresh_instance(self, instance):
+        instance.refresh_from_db()
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -81,6 +86,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         # remove user from followers list
         del self.session.followers[self.username]
         await self.session.asave()
+        await self._refresh_instance(self.session)
         # send updated followers list to all clients
         await self.update_session_followers_list_to_all_clients()
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
