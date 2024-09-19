@@ -1,4 +1,5 @@
 from typing import Any
+from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -6,7 +7,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from apps.realtime_timer.models import FocusSession, SessionFollower
+from apps.realtime_timer.models import FocusSession
 
 from .business_logic import selectors
 from .forms import FocusSessionForm
@@ -34,24 +35,38 @@ class MainSessionView(LoginRequiredMixin, TemplateView):
         return context_data
 
 
-class SessionDetailView(LoginRequiredMixin, View):
+class SessionDetailView(View):
     def get(self, request, session_id):
         focus_session = selectors.get_focus_session_by_id(session_id=session_id)
-        is_session_owner = focus_session.owner == request.user
-        followers = selectors.get_session_followers(session=focus_session)
-        is_session_follower = selectors.is_user_a_session_follower(session=focus_session, user=request.user)
-        will_finish_at = selectors.get_session_will_finish_at(request_user=request.user, session=focus_session)
+        if request.user.is_authenticated:
+            will_finish_at = selectors.get_session_will_finish_at(request_user=request.user, session=focus_session)
+            is_session_owner = focus_session.owner == request.user
+            username = request.user.username
+        else:
+            will_finish_at = None
+            is_session_owner = False
+            # if user is not logged in, we will use look for username in session
+            # since we store username in session storage when unauthenticated user
+            # try to join the session
+            username = request.session.get("username", None)
+
         return render(
             request,
             "realtime_timer/session_detail.html",
             {
                 "focus_session": focus_session,
-                "followers": followers,
                 "will_finish_at": will_finish_at,
                 "is_session_owner": is_session_owner,
-                "is_session_follower": is_session_follower,
+                "username": username,
             },
         )
+
+    def post(self, request, session_id):
+        username = request.POST.get("username", None)
+        # save username in session storage
+        request.session["username"] = username
+        session_detail_url = reverse("realtime_timer:session-detail-view", args=[session_id])
+        return redirect(session_detail_url)
 
 
 # class DashboardView(LoginRequiredMixin, ListView):

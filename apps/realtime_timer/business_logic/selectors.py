@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.formats import date_format
 from django.utils import timezone
 from django.db.models import Sum
-from ..models import FocusSession, SessionFollower, Task
+from ..models import FocusSession, Task
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -27,15 +27,6 @@ def get_session_tasks(*, session: FocusSession) -> QuerySet[Task]:
 
 def get_task_by_id(*, task_id: int) -> Task:
     return get_object_or_404(Task, id=task_id)
-
-
-def is_user_a_session_follower(*, session: FocusSession, user) -> bool:
-    """Is this user a follower of the given session?"""
-    return session.followers.filter(follower=user).exists()  # type: ignore
-
-
-def get_session_followers(*, session: FocusSession) -> QuerySet[SessionFollower]:
-    return SessionFollower.objects.filter(session=session)
 
 
 def get_session_will_finish_at(*, request_user, session: FocusSession):

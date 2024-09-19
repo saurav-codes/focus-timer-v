@@ -47,6 +47,7 @@ class FocusSession(models.Model):
     # total time spent focusing
     total_focus_completed = models.DurationField(default=timezone.timedelta)
     timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)
+    followers = models.JSONField(default=dict)
 
     class Meta:
         ordering = ["-created_at"]
@@ -116,16 +117,3 @@ class Task(models.Model):
 
     def __str__(self):
         return self.description
-
-
-class SessionFollower(models.Model):
-    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name="followed_sessions")
-    session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="followers")
-    joined_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("follower", "session")
-        ordering = ["-joined_at"]
-
-    def __str__(self):
-        return f"{self.follower.username} following {self.session.session_id}"

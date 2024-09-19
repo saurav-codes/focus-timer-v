@@ -1,7 +1,7 @@
 from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
 
-from ..models import FocusPeriod, FocusSession, FocusCycle, SessionFollower
+from ..models import FocusPeriod, FocusSession, FocusCycle
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.utils import timezone
@@ -228,13 +228,6 @@ class AsyncTimerService:
         elif timer_state == FocusSession.TIMER_PAUSED:
             print(f"resuming timer for {self.user.username}")
             await self.resume_timer()
-
-    @database_sync_to_async
-    def _add_user_to_session_followers(self, user):
-        return SessionFollower.objects.create(follower=user, session=self.session)
-
-    async def join_session(self, user):
-        await self._add_user_to_session_followers(user)
 
     async def get_timer_display_data(self):
         """

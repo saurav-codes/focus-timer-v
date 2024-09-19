@@ -1,9 +1,10 @@
 // static/js/focus_session.js
 class FocusSessionManager {
-  constructor(sessionId) {
+  constructor(sessionId, username) {
     this.sessionId = sessionId;
+    this.username = username;
     this.socket = new WebSocket(
-      `wss://${window.location.host}/ws/focus_session/${sessionId}/`,
+      `wss://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
     );
     this.socket.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
     this.socket.onclose = (e) => this.reloadWindowAfterDelay();
@@ -66,19 +67,6 @@ class FocusSessionManager {
   // *****************************************
   // ********** Helper Functions **********
   // *****************************************
-
-
-  join_session() {
-    const joinSessionButton = document.getElementById('join-session-button');
-    if (joinSessionButton) {
-      // delete the join session button
-      // since we are already in the session
-      joinSessionButton.remove();
-    }
-    this.send_action_to_server(
-      { "action": "join_session"}
-    )
-  }
 
   send_action_to_server(event_type) {
     this.socket.send(JSON.stringify(event_type));
@@ -234,25 +222,53 @@ class FocusSessionManager {
   }
 
   update_session_followers_list(data) {
+    console.log("updating session followers list", data);
     const followersContainer = document.getElementById('session-followers-container');
     if (followersContainer) {
-      followersContainer.innerHTML = '<h3>Session Followers</h3>';
-      followersContainer.innerHTML += '<ul>';
-      data.followers.forEach(follower => {
+      let guest_users = [];
+      let authenticated_users = [];
+
+      Object.entries(data.followers).forEach(([username, follower]) => {
         const joinedDate = new Date(follower.joined_at).toLocaleString();
-        followersContainer.innerHTML += `<li>${follower.username} (Joined: ${joinedDate})</li>`;
+        const userType = follower.user_type;
+        const coloured_username = follower.coloured_username;
+        if (userType == "guest") {
+          guest_users.push({username: username, joined_at: joinedDate, coloured_username: coloured_username});
+        } else {
+          authenticated_users.push({username: username, joined_at: joinedDate, coloured_username: coloured_username});
+        }
       });
-      followersContainer.innerHTML += '</ul>';
+
+      if (guest_users.length > 0 | authenticated_users.length > 0) {
+        followersContainer.innerHTML = '<h3>Session Followers</h3>';
+        followersContainer.innerHTML += '<ul>';
+        _populate_session_followers_list(authenticated_users, followersContainer);
+        _populate_session_followers_list(guest_users, followersContainer);
+        followersContainer.innerHTML += '</ul>';
+      }
     }
   }
 
+}
+
+function _populate_session_followers_list(users, followersContainer) {
+  users.forEach(user => {
+    if (user.coloured_username == true) {
+      followersContainer.innerHTML += `<li class="text-green-500">${user.username} - Joined at: ${user.joined_at}</li>`;
+    } else {
+      followersContainer.innerHTML += `<li class="text-gray-500">${user.username} - Joined at: ${user.joined_at}</li>`;
+    }
+  });
 }
 
 // Initialize the FocusSessionManager when the page loads
 let focusSessionManager;
 document.addEventListener("DOMContentLoaded", (event) => {
   const sessionId = document.getElementById("session-id").dataset.sessionId;
-  focusSessionManager = new FocusSessionManager(sessionId);
+  const username = document.getElementById("username").dataset.username;
+  if (username) {
+    focusSessionManager = new FocusSessionManager(sessionId, username);
+  }
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
