@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import User, FocusSession, FocusPeriod, FocusCycle, Task
+from .models import User, FocusSession, FocusPeriod, FocusCycle, Task, FocusSessionFollower
 
 
 @admin.register(User)
@@ -89,3 +89,17 @@ class TaskAdmin(admin.ModelAdmin):
         "updated_at",
     )
     date_hierarchy = "created_at"
+
+
+@admin.register(FocusSessionFollower)
+class FocusSessionFollowerAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "session",
+        "user",
+        "username",
+        "joined_at",
+        "user_type",
+    )
+    list_filter = ("user_type", "joined_at")
+    date_hierarchy = "joined_at"

@@ -5,7 +5,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.shortcuts import get_object_or_404
 from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
-from .models import FocusSession
+from .models import FocusSession, FocusSessionFollower
 from channels.db import database_sync_to_async
 
 from functools import wraps
@@ -54,22 +54,9 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.send_timer_update_to_all_clients()
 
         # add client to connected clients list
-        await self._save_session_follower()
+        await self._create_session_follower()
         print(f"connected clients: {self.username}")
         await self.update_session_followers_list_to_all_clients()
-
-    async def _save_session_follower(self):
-        if self.username not in self.session.followers.keys():
-            self.session.followers[self.username] = {
-                "joined_at": datetime.now().isoformat(),
-                "user_type": "guest" if self.user.is_anonymous else "authenticated",
-            }
-            await self.session.asave()
-            await self._refresh_instance(self.session)
-
-    @database_sync_to_async
-    def _refresh_instance(self, instance):
-        instance.refresh_from_db()
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -85,15 +72,31 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 print("created new focus period when user disconnected")
         # remove user from followers list
         print(f"deleting user {self.username} from followers list")
-        print(f"followers list before deletion: {self.session.followers}")
-        del self.session.followers[self.username]
-        print(f"followers list after deletion: {self.session.followers}")
-        await self.session.asave()
-        print(f"followers list after saving: {self.session.followers}")
-        await self._refresh_instance(self.session)
+        await self._delete_session_follower()
         # send updated followers list to all clients
         await self.update_session_followers_list_to_all_clients()
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
+
+    @database_sync_to_async
+    def _delete_session_follower(self):
+        print(f"deleting user {self.username} from followers list")
+        FocusSessionFollower.objects.filter(session=self.session, username=self.username).delete()
+
+    @database_sync_to_async
+    def _create_session_follower(self):
+        if self.user.is_authenticated:
+            FocusSessionFollower.objects.get_or_create(
+                session=self.session,
+                user=self.user,
+                username=self.username,
+                user_type="authenticated",
+            )
+        else:
+            FocusSessionFollower.objects.get_or_create(
+                session=self.session,
+                username=self.username,
+                user_type="guest",
+            )
 
     async def receive(self, text_data):
         """
@@ -169,27 +172,34 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def update_session_followers_list_to_all_clients(self):
         # we don't need to calculate followers list for each client
         # we can just send the followers list to all clients
-        print(f"sending followers list to all clients: {self.session.followers.keys()}")
+        session_followers_list = await self._get_session_followers_list()
         await self.channel_layer.group_send(  # type: ignore
             self.session_group_name,
             {
                 "type": "followers_update",
-                "followers": self.session.followers,
+                "followers": session_followers_list,
             },
         )
 
+    @database_sync_to_async
+    def _get_session_followers_list(self):
+        session_followers = FocusSessionFollower.objects.filter(session=self.session)
+        session_followers_list = {}
+        for follower in session_followers:
+            session_followers_list[follower.username] = {
+                "user_type": follower.user_type,
+                "joined_at": follower.joined_at.isoformat(),
+            }
+        return session_followers_list
+
     async def followers_update(self, data):
-        followers_data = copy.deepcopy(data.get("followers", {}))
+        followers_data = copy.deepcopy(data.get("followers", []))
         if self.username in followers_data.keys():
             followers_data[self.username]["coloured_username"] = True
         response_data = {
             "type": "followers_update",
             "followers": followers_data,
         }
-        from pprint import pprint
-
-        print(f"sending followers list to {self.username}")
-        pprint(response_data)
         await self.send(text_data=json.dumps(response_data))
 
     async def sync_inactive_timer(self):

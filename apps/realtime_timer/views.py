@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-from apps.realtime_timer.models import FocusSession
+from apps.realtime_timer.models import FocusSession, FocusSessionFollower
 from django.contrib import messages
 
 from .business_logic import selectors
@@ -65,10 +65,14 @@ class SessionDetailView(View):
         )
 
     def post(self, request, session_id):
+        """
+        handle anonymous user
+        """
+        # TODO: sanitize username to avoid hackers
         username = request.POST.get("username", None)
         # check if username is already in session followers
-        session_followers = selectors.get_focus_session_by_id(session_id=session_id).followers.keys()
-        if username in session_followers:
+        focus_session = selectors.get_focus_session_by_id(session_id=session_id)
+        if focus_session.followers.filter(username=username).exists():  # type: ignore
             # username is already in session followers
             # so we will redirect to session detail page
             return HttpResponse("Username already in session", status=200)
