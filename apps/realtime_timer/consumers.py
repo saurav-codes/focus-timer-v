@@ -84,8 +84,12 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 await self.timer_service._create_new_focus_period()
                 print("created new focus period when user disconnected")
         # remove user from followers list
+        print(f"deleting user {self.username} from followers list")
+        print(f"followers list before deletion: {self.session.followers}")
         del self.session.followers[self.username]
+        print(f"followers list after deletion: {self.session.followers}")
         await self.session.asave()
+        print(f"followers list after saving: {self.session.followers}")
         await self._refresh_instance(self.session)
         # send updated followers list to all clients
         await self.update_session_followers_list_to_all_clients()
