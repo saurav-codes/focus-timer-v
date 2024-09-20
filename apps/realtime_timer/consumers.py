@@ -186,6 +186,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             "type": "followers_update",
             "followers": followers_data,
         }
+        from pprint import pprint
+
+        print(f"sending followers list to {self.username}")
+        pprint(response_data)
         await self.send(text_data=json.dumps(response_data))
 
     async def sync_inactive_timer(self):
