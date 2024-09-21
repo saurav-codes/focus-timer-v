@@ -31,6 +31,15 @@ def async_session_owner_only(func):
 
         if user != session_owner:
             await self.send(text_data=json.dumps({"error": "You are not authorized to perform this action."}))
+            # this usually happens when the user is not the session owner
+            # and to tackle sleeping tabs issue, we will manually
+            # send the timer update to all clients when this happens
+            print(
+                "seems like the user is not the session owner & incase\
+                  this maybe a sleeping tab issue, we are sending latest updates of \
+                  timer and followers and other data to all clients"
+            )
+            await self.sync_inactive_timer()
             return
         return await func(self, *args, **kwargs)
 
@@ -173,6 +182,24 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         # we don't need to calculate followers list for each client
         # we can just send the followers list to all clients
         session_followers_list = await self._get_session_followers_list()
+        # we need to keep only the active clients
+        # import ipdb; ipdb.set_trace()
+        # Get all active clients in the session group
+        # active_clients = await self.channel_layer.group_channels(self.session_group_name)
+
+        # Extract usernames from active clients
+        # active_usernames = set()
+        # for channel in active_clients:
+        #     channel_user = await self.channel_layer.get_channel_user(channel)
+        #     if channel_user:
+        #         active_usernames.add(channel_user.username)
+
+        # Filter session_followers_list to keep only active clients
+        # session_followers_list = {
+        #     username: data
+        #     for username, data in session_followers_list.items()
+        #     if username in active_usernames
+        # }
         await self.channel_layer.group_send(  # type: ignore
             self.session_group_name,
             {
