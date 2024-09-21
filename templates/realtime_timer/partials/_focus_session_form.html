@@ -143,10 +143,12 @@
 
     function formatLocalDateTime(isoString) {
         const date = new Date(isoString);
-        return new Intl.DateTimeFormat(undefined, {
+        const datetime = new Intl.DateTimeFormat(undefined, {
             dateStyle: 'medium',
             timeStyle: 'medium'
         }).format(date);
+        const timezone = new Date().toString().match(/\(([^)]+)\)$/)[1];
+        return `${datetime} ${timezone}`;
     }
 
 </script>
