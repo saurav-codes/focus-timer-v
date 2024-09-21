@@ -211,3 +211,4 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         print("syncing inactive timer", datetime.now())
         await self.send_timer_update_to_all_clients()
         await self.update_session_will_finish_at_to_all_clients()
+        await self.update_session_followers_list_to_all_clients()
