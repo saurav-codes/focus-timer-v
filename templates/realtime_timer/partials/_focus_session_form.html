@@ -83,7 +83,8 @@
             {% endfor %}
         </div>
         <p>
-            Exact time after finishing all cycles: {{ generated_focus_cycle_data.exact_time_after_finishing_all_cycles }} {{ request.user.timezone }}
+            Exact time after finishing all cycles:
+            <span id="exact-finish-time" data-iso-time="{{ generated_focus_cycle_data.exact_time_after_finishing_all_cycles }}"></span>
         </p>
         <button hx-post="{% url 'realtime_timer:focus-cycles-and-session-create-view' %}">Start Focus Session</button>
     {% endif %}
@@ -92,7 +93,7 @@
         integrity="sha512-TelkP3PCMJv+viMWynjKcvLsQzx6dJHvIGhfqzFtZKgAjKM1YPqcwzzDEoTc/BHjf43PcPzTQOjuTr4YdE8lNQ=="
         crossorigin="anonymous"
         referrerpolicy="no-referrer"></script>
-<script>
+<script defer>
     document.body.addEventListener('htmx:afterSettle', function (event) {
         const focus_cycles_table = document.getElementById('focus_cycles_table');
 
@@ -129,5 +130,23 @@
                 updateTotalCycles();
             }
         }
+
+        // display the exact finish time with the local timezone
+        const exactFinishTimeElement = document.getElementById('exact-finish-time');
+        if (exactFinishTimeElement) {
+            const isoTime = exactFinishTimeElement.getAttribute('data-iso-time');
+            exactFinishTimeElement.textContent = formatLocalDateTime(isoTime);
+        } else {
+            console.log("exactFinishTimeElement not found");
+        }
     });
+
+    function formatLocalDateTime(isoString) {
+        const date = new Date(isoString);
+        return new Intl.DateTimeFormat(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'medium'
+        }).format(date);
+    }
+
 </script>

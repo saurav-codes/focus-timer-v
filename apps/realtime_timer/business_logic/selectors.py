@@ -26,8 +26,6 @@ def get_task_by_id(*, task_id: int) -> Task:
 
 
 def get_session_will_finish_at(*, request_user, session: FocusSession):
-    user = User.objects.get(username=request_user.username)
-    user_timezone = timezone.now().astimezone(user.timezone)  # type: ignore
     # total time user will spend on this session
     all_cycles_total_duration = session.focus_cycles.all().only("duration").aggregate(  # type: ignore
         total_duration=Sum("duration")
@@ -45,14 +43,12 @@ def get_session_will_finish_at(*, request_user, session: FocusSession):
     )
     # time user has spent on the current focus period
     if timer_started_at_for_unfinished_fp:
-        duration_for_unfinished_fp = user_timezone - timer_started_at_for_unfinished_fp.started_at
+        duration_for_unfinished_fp = timezone.now() - timer_started_at_for_unfinished_fp.started_at
     else:
         duration_for_unfinished_fp = timezone.timedelta(0)
     total_time_focused = total_finished_fp + duration_for_unfinished_fp
     # time user has left to focus on this session
     total_time_left_to_focus = all_cycles_total_duration - total_time_focused
     # time user will finish the session at
-    time_user_will_finish_at = user_timezone + total_time_left_to_focus
-    # format the time in readable format
-    formatted_time = date_format(time_user_will_finish_at, format="F j, Y, g:i A")
-    return f"{formatted_time} {user.timezone}"  # type: ignore
+    time_user_will_finish_at = timezone.now() + total_time_left_to_focus
+    return time_user_will_finish_at.isoformat()
