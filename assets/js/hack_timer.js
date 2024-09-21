@@ -110,7 +110,6 @@ onmessage = function (event) {\
 				}
 			};
 			worker.onmessage = function (event) {
-                console.log("received message", event.data);
 				var data = event.data,
 					fakeId = data.fakeId,
 					request,

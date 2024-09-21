@@ -18,6 +18,7 @@ onmessage = function (event) {
 				clearInterval(fakeIdToId[fakeId]);
 				delete fakeIdToId[fakeId];
 			}
+			console.log("cleared interval", fakeId);
 			break;
 		case 'setTimeout':
 			fakeIdToId[fakeId] = setTimeout(function () {
@@ -25,12 +26,14 @@ onmessage = function (event) {
 				if (fakeIdToId.hasOwnProperty (fakeId)) {
 					delete fakeIdToId[fakeId];
 				}
+                console.log("posted message", fakeId);
 			}, time);
 			break;
 		case 'clearTimeout':
 			if (fakeIdToId.hasOwnProperty (fakeId)) {
 				clearTimeout(fakeIdToId[fakeId]);
 				delete fakeIdToId[fakeId];
+                console.log("cleared timeout", fakeId);
 			}
 			break;
 	}
