@@ -4,6 +4,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from timezone_field import TimeZoneField
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class User(AbstractUser):
@@ -53,6 +58,16 @@ class FocusSession(models.Model):
 
     def __str__(self):
         return f"Session {self.session_id} by {self.owner.username}"
+
+    async def asave(self, *args, **kwargs):
+        await super().asave(*args, **kwargs)
+        # trigger the sync_inactive_timer consumer method
+        # to sync the timer for the clients who are not actively
+        # working on this session
+        from apps.realtime_timer.business_logic.services import trigger_sync_inactive_timer_for_all_connected_clients
+
+        logger.info("model:focus_session:save:sync_inactive_timer triggered")
+        await trigger_sync_inactive_timer_for_all_connected_clients(str(self.session_id))
 
     def get_absolute_url(self):
         return reverse("realtime_timer:session-detail-view", kwargs={"session_id": self.session_id})

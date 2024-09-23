@@ -1,14 +1,20 @@
 import copy
 from datetime import datetime
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.shortcuts import get_object_or_404
 from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
 from .models import FocusSession, FocusSessionFollower
 from channels.db import database_sync_to_async
+import redis_lock
+import redis
+from django.conf import settings
 
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 
 def async_session_owner_only(func):
@@ -31,16 +37,7 @@ def async_session_owner_only(func):
 
         if user != session_owner:
             await self.send(text_data=json.dumps({"error": "You are not authorized to perform this action."}))
-            # this usually happens when the user is not the session owner
-            # and to tackle sleeping tabs issue, we will manually
-            # send the timer update to all clients when this happens
-            print(
-                "seems like the user is not the session owner & incase\
-                  this maybe a sleeping tab issue, we are sending latest updates of \
-                  timer and followers and other data to all clients"
-            )
-            await self.sync_inactive_timer()
-            return
+
         return await func(self, *args, **kwargs)
 
     return wrapper
@@ -48,6 +45,7 @@ def async_session_owner_only(func):
 
 class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.redis_client = redis.Redis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}")
         self.user = self.scope["user"]
         self.username = self.scope["url_route"]["kwargs"]["username"]
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
@@ -60,11 +58,13 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_add(self.session_group_name, self.channel_name)  # type: ignore
         await self.accept()
+        # even though we should be sending timer update to only connected client
+        # but since we are some tab sleep issues, we are sending it to all connected clients
         await self.send_timer_update_to_all_clients()
 
         # add client to connected clients list
         await self._create_session_follower()
-        print(f"connected clients: {self.username}")
+        logger.info(f"User '{self.username}' connected to session '{self.session_id}'")
         await self.update_session_followers_list_to_all_clients()
 
     async def disconnect(self, close_code):
@@ -77,18 +77,21 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             if self.session.timer_state == FocusSession.TIMER_RUNNING:
                 # since the timer is running, we will create a new focus period
                 # which will be the last focus period of the session
+                # TODO: perform this action in a transaction or lock
                 await self.timer_service._create_new_focus_period()
-                print("created new focus period when user disconnected")
+                logger.info(f"Created new focus period for session '{self.session_id}' on owner disconnect")
         # remove user from followers list
-        print(f"deleting user {self.username} from followers list")
+        logger.info(f"User '{self.username}' disconnected from session '{self.session_id}'")
         await self._delete_session_follower()
         # send updated followers list to all clients
         await self.update_session_followers_list_to_all_clients()
+        # remove this client from the session group so
+        # that it will not receive any messages
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
 
     @database_sync_to_async
     def _delete_session_follower(self):
-        print(f"deleting user {self.username} from followers list")
+        logger.info(f"Removing user '{self.username}' from session '{self.session_id}' followers")
         FocusSessionFollower.objects.filter(session=self.session, username=self.username).delete()
 
     @database_sync_to_async
@@ -114,35 +117,24 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         action = data.get("action")
         if action == "toggle_timer":
-            await self.toggle_timer()
-        if action == "transition_to_next_cycle":
-            print(f"switching to next cycle for user {self.user.username}")
-            await self.transition_to_next_cycle()
+            await self.toggle_timer(text_data)
         if action == "stop_timer":
             await self.stop_timer()
-        if action == "followers_update":
-            print("updating session followers list")
-            await self.update_session_followers_list_to_all_clients()
         if action == "sync_inactive_timer":
-            print(f"syncing inactive timer for {self.user.username}")
-            await self.sync_inactive_timer()
+            logger.info(f"Syncing inactive timer for user '{self.user.username}' in session '{self.session_id}'")
+            await self.sync_inactive_timer(text_data)
+        if action == "timer_update":
+            await self.send_timer_update_to_all_clients()
 
     @async_session_owner_only
-    async def toggle_timer(self):
+    async def toggle_timer(self, text_data):
+        logger.info(f"Toggling timer for user '{self.user.username}' in session '{self.session_id}'")
         await self.timer_service.toggle_timer()
-        await self.send_timer_update_to_all_clients()
-        await self.update_session_will_finish_at_to_all_clients()
 
     @async_session_owner_only
     async def stop_timer(self):
+        logger.info(f"Stopping timer for user '{self.user.username}' in session '{self.session_id}'")
         await self.timer_service.stop_timer()
-        await self.send_timer_update_to_all_clients()
-
-    @async_session_owner_only
-    async def transition_to_next_cycle(self):
-        await self.timer_service.transition_to_next_cycle()
-        await self.send_timer_update_to_all_clients()
-        await self.update_session_will_finish_at_to_all_clients()
 
     async def send_timer_update_to_all_clients(self):
         timer_display_data = await self.timer_service.get_timer_display_data()
@@ -153,6 +145,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 "timer_display_data": timer_display_data,
             },
         )
+        logger.info(f"Sent timer update to all clients in session '{self.session_id}'")
 
     async def timer_update(self, data):
         await self.send(text_data=json.dumps(data))
@@ -179,27 +172,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         )
 
     async def update_session_followers_list_to_all_clients(self):
-        # we don't need to calculate followers list for each client
-        # we can just send the followers list to all clients
         session_followers_list = await self._get_session_followers_list()
-        # we need to keep only the active clients
-        # import ipdb; ipdb.set_trace()
-        # Get all active clients in the session group
-        # active_clients = await self.channel_layer.group_channels(self.session_group_name)
-
-        # Extract usernames from active clients
-        # active_usernames = set()
-        # for channel in active_clients:
-        #     channel_user = await self.channel_layer.get_channel_user(channel)
-        #     if channel_user:
-        #         active_usernames.add(channel_user.username)
-
-        # Filter session_followers_list to keep only active clients
-        # session_followers_list = {
-        #     username: data
-        #     for username, data in session_followers_list.items()
-        #     if username in active_usernames
-        # }
         await self.channel_layer.group_send(  # type: ignore
             self.session_group_name,
             {
@@ -229,13 +202,13 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         }
         await self.send(text_data=json.dumps(response_data))
 
-    async def sync_inactive_timer(self):
+    async def sync_inactive_timer(self, text_data):
         """
         Sometime OS or Browser pauses the timer from
         client side and then clientside have not idea
         about the server time. so we update that time here
         """
-        print("syncing inactive timer", datetime.now())
+        logger.info(f"Syncing inactive timer for session '{self.session_id}' at {datetime.now()}")
         await self.send_timer_update_to_all_clients()
         await self.update_session_will_finish_at_to_all_clients()
         await self.update_session_followers_list_to_all_clients()

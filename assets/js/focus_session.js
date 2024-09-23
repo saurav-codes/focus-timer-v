@@ -12,6 +12,7 @@ class FocusSessionManager {
     this.timerInterval = null;
     this.originalTitle = document.title;
     this.lastSyncTime = Date.now();
+    console.log(`FocusSessionManager initialized for session: ${sessionId}, user: ${username}`);
   }
 
   // *****************************************
@@ -20,27 +21,23 @@ class FocusSessionManager {
 
   handleMessage(data) {
     if (data.type === "timer_update") {
-      console.log("got timer update from server");
+      console.log("Received timer update from server", data);
       this.display_updated_timer_data(data);
       // since we got this time from server
       // it is synced with server time
       // so we can update our last sync time
       this.lastSyncTime = Date.now();
     } else if (data.type === "followers_update") {
+      console.log("Received followers update from server", data);
       this.update_session_followers_list(data);
     } else if (data.type === "will_finish_at_update") {
+      console.log("Received will finish at update from server", data);
       this.update_will_finish_at_display(data);
     }
   }
 
-  transitionToNextCycle() {
-    console.log("transitioning to next cycle");
-    this.send_action_to_server(
-      { "action": "transition_to_next_cycle" }
-    )
-  }
-
   toggleTimer() {
+    console.log("Toggling timer");
     // since we are toggling the timer
     // this will send request to backend to toggle the timer
     // and backend will send updated timer details
@@ -52,27 +49,30 @@ class FocusSessionManager {
   }
 
   stopTimer() {
+    console.log("Stopping timer");
     this.send_action_to_server(
       { "action": "stop_timer" }
     )
   }
 
   sync_inactive_timer() {
+    console.log("Syncing inactive timer");
     this.send_action_to_server(
       { "action": "sync_inactive_timer" }
     )
   }
-
 
   // *****************************************
   // ********** Helper Functions **********
   // *****************************************
 
   send_action_to_server(event_type) {
+    console.log("Sending action to server", event_type);
     this.socket.send(JSON.stringify(event_type));
   }
 
   reloadWindowAfterDelay() {
+    console.log("Connection to server is dropped, reloading page in 2 seconds");
     setTimeout(this.reloadWindow, 2000);
   }
 
@@ -83,6 +83,7 @@ class FocusSessionManager {
   }
 
   display_updated_timer_data(data) {
+    console.log("Displaying updated timer data", data);
     const timerDisplayData = data.timer_display_data;
     this.stopClientSideTimer(); // Clear any existing interval
     this.resetPageTitle();  // reset page title incase it was changed
@@ -118,6 +119,7 @@ class FocusSessionManager {
   }
 
   startClientSideTimer(timerDisplayData) {
+    console.log("Starting client-side timer", timerDisplayData);
     this.stopClientSideTimer(); // Clear any existing interval
     const endTime = Date.now() + timerDisplayData.remaining_time * 1000;
     this.remainingTime = timerDisplayData.remaining_time;
@@ -129,7 +131,14 @@ class FocusSessionManager {
         // then we need to transition to next cycle
         // and also stop the current cycle timer
         this.stopClientSideTimer();
-        this.transitionToNextCycle();
+        console.log("Current cycle is completed");
+        this.remainingTime = 0;
+        this.updateRemainingTimeDisplay(this.remainingTime);
+        // here we are sending timer_update to server
+        // which will make server again check the current cycle
+        // and change the cycle if needed
+        // and also send updated timer details to all clients
+        this.send_action_to_server({ "action": "timer_update" });
         return;
       }
       const currentTime = Date.now();
@@ -148,7 +157,6 @@ class FocusSessionManager {
     }
   }
 
-
   // *****************************************
   // ********** UI Update Functions *********
   // *****************************************
@@ -158,22 +166,26 @@ class FocusSessionManager {
     if (remainingTimeElement) {
       let formattedTime = this.formatTime(seconds);
       remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
+      console.log(`Updated remaining time display: ${formattedTime}`);
     }
   }
 
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
     let formattedTime = this.formatTime(seconds);
     document.title = `${formattedTime} - ${current_cycle_type}`;
+    console.log(`Updated page title to current cycle: ${formattedTime} - ${current_cycle_type}`);
   }
 
   resetPageTitle() {
     document.title = this.originalTitle;
+    console.log("Reset page title to original");
   }
 
   update_will_finish_at_display(data) {
     const willFinishAtElement = document.getElementById('will-finish-at');
     if (willFinishAtElement) {
-      willFinishAtElement.textContent = `Session will finish at: ${data.will_finish_at_timestamp}`;
+      willFinishAtElement.textContent = `Session will finish at: ${this.formatLocalDateTime(data.will_finish_at_timestamp)}`;
+      console.log(`Updated will finish at display: ${data.will_finish_at_timestamp}`);
     }
   }
 
@@ -192,6 +204,7 @@ class FocusSessionManager {
         cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
         focusCyclesListElement.appendChild(cycleElement);
       });
+      console.log("Updated focus cycles list", timerDisplayData.focus_cycles);
     }
   }
 
@@ -206,6 +219,7 @@ class FocusSessionManager {
     if (timerToggleText) {
       timerToggleText.textContent = "Pause";
     }
+    console.log("Updated timer toggle icon to play");
   }
 
   update_timer_toggle_icon_to_pause() {
@@ -219,10 +233,11 @@ class FocusSessionManager {
     if (timerToggleText) {
       timerToggleText.textContent = "Resume";
     }
+    console.log("Updated timer toggle icon to pause");
   }
 
   update_session_followers_list(data) {
-    console.log("updating session followers list", data);
+    console.log("Updating session followers list", data);
     const followersContainer = document.getElementById('session-followers-container');
     if (followersContainer) {
       let guest_users = [];
@@ -245,6 +260,7 @@ class FocusSessionManager {
         _populate_session_followers_list(authenticated_users, followersContainer);
         _populate_session_followers_list(guest_users, followersContainer);
         followersContainer.innerHTML += '</ul>';
+        console.log("Updated session followers list in UI");
       }
     }
   }
@@ -275,9 +291,8 @@ document.addEventListener("DOMContentLoaded", (event) => {
       const currentTime = Date.now();
       // Convert to seconds
       const timeSinceLastSync = (currentTime - focusSessionManager.lastSyncTime) / 1000;
-      if (timeSinceLastSync > 300) {  // 300 seconds = 5 minutes
-        console.log("since timer last synced", timeSinceLastSync, "seconds");
-        console.log("syncing inactive timer");
+      if (timeSinceLastSync > 300) { // 300 seconds = 5 minutes
+        console.log("Time since last sync:", timeSinceLastSync, "seconds. Syncing inactive timer.");
         focusSessionManager.sync_inactive_timer();
       }
     }
