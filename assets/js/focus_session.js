@@ -166,7 +166,6 @@ class FocusSessionManager {
     if (remainingTimeElement) {
       let formattedTime = this.formatTime(seconds);
       remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
-      console.log(`Updated remaining time display: ${formattedTime}`);
     }
   }
 
