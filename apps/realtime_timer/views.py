@@ -25,7 +25,10 @@ class HomepageView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
         context_data["user_sessions"] = FocusSession.objects.all()[:10]
-        logger.info("HomepageView: Retrieved user sessions for homepage by user: %s", self.request.user.username)  # type: ignore
+        logger.info(
+            f"HomepageView: Retrieved user sessions for homepage by user: {self.request.user.username}",  # type: ignore
+            extra={"request": self.request},
+        )
         return context_data
 
 
@@ -39,7 +42,10 @@ class MainSessionView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
         context_data["focus_session_form"] = FocusSessionForm()
-        logger.info("MainSessionView: Retrieved focus session form for main session page by user: %s", self.request.user.username)  # type: ignore
+        logger.info(
+            f"MainSessionView: Retrieved focus session form for main session page by user: {self.request.user.username}",
+            extra={"request": self.request},
+        )
         return context_data
 
 
@@ -50,7 +56,10 @@ class SessionDetailView(View):
             will_finish_at = selectors.get_session_will_finish_at(request_user=request.user, session=focus_session)
             is_session_owner = focus_session.owner == request.user
             username = request.user.username
-            logger.info(f"SessionDetailView: Authenticated user {username} accessed session {session_id}")
+            logger.info(
+                f"SessionDetailView: Authenticated user {username} accessed session {session_id}",
+                extra={"request": request},
+            )
         else:
             will_finish_at = None
             is_session_owner = False
@@ -58,7 +67,7 @@ class SessionDetailView(View):
             # since we store username in session storage when unauthenticated user
             # try to join the session
             username = request.session.get("username", None)
-            logger.info(f"SessionDetailView: Anonymous user accessed session {session_id}")
+            logger.info(f"SessionDetailView: Anonymous user accessed session {session_id}", extra={"request": request})
 
         return render(
             request,
@@ -82,12 +91,16 @@ class SessionDetailView(View):
         if focus_session.followers.filter(username=username).exists():  # type: ignore
             # username is already in session followers
             # so we will redirect to session detail page
-            logger.warning(f"SessionDetailView: Username {username} already in session {session_id}")
+            logger.warning(
+                f"SessionDetailView: Username {username} already in session {session_id}", extra={"request": request}
+            )
             return HttpResponse("Username already in session", status=200)
         else:
             # save username in session storage
             request.session["username"] = username
-            logger.info(f"SessionDetailView: Added username {username} to session {session_id}")
+            logger.info(
+                f"SessionDetailView: Added username {username} to session {session_id}", extra={"request": request}
+            )
         session_detail_url = reverse("realtime_timer:session-detail-view", args=[session_id])
         return HttpResponseClientRedirect(session_detail_url)
 

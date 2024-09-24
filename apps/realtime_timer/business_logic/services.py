@@ -44,7 +44,7 @@ def create_focus_cycles_and_session(
         owner=owner,
         technique=focus_session_form_cleaned_data["technique"],
     )
-    logger.info(f"Created focus session with ID: {focus_session.session_id}")
+    logger.info(f"{owner.username} Created focus session with ID: {focus_session.session_id}")
 
     # Create focus cycles
     for order, cycle_data in fetched_focus_cycle_data_from_post_request.items():
@@ -57,10 +57,10 @@ def create_focus_cycles_and_session(
             )
             fc.full_clean()
             fc.save()
-            logger.info(f"Created focus cycle with order: {order} and type: {cycle_data['type']}")
+            logger.info(f"{owner.username} Created focus cycle with order: {order} and type: {cycle_data['type']}")
         except ValidationError as e:
             focus_session.delete()
-            logger.error(f"Validation error while creating focus cycle: {e}")
+            logger.error(f"{owner.username} Validation error while creating focus cycle: {e}")
             return e
 
     # since we have created the focus cycles but the instance is not updated
@@ -73,11 +73,11 @@ def create_focus_cycles_and_session(
     if first_cycle:
         focus_session.current_cycle = first_cycle
         focus_session.save()
-        logger.info(f"Set first cycle as current cycle for session ID: {focus_session.session_id}")
+        logger.info(f"{owner.username} Set first cycle as current cycle for session ID: {focus_session.session_id}")
 
     # create first focus period because the focus session is started.
     FocusPeriod.objects.create(session=focus_session, cycle=first_cycle)
-    logger.info(f"Created first focus period for session ID: {focus_session.session_id}")
+    logger.info(f"{owner.username} Created first focus period for session ID: {focus_session.session_id}")
     return focus_session
 
 
@@ -89,7 +89,7 @@ def fetch_focus_cycles_data_from_post_request(request: HttpRequest) -> dict | Ht
             i: {"type": t, "duration": int(d)} for i, (t, d) in enumerate(zip(cycles_types, cycles_durations), start=1)
         }
     except ValueError:
-        logger.error("Duration must be an integer")
+        logger.error("Duration must be an integer", extra={"request": request})
         return HttpResponse(
             "Duration must be an integer like 1, 2, ... upto any number of minutes you want to focus or break"
         )
@@ -116,7 +116,9 @@ class AsyncTimerService:
     async def _create_new_focus_period(self):
         current_cycle = await self._get_current_cycle()
         await database_sync_to_async(FocusPeriod.objects.create)(session=self.session, cycle=current_cycle)
-        logger.info(f"Created new focus period for session ID: {self.session.session_id}, cycle ID: {current_cycle.id}")
+        logger.info(
+            f"{self.user.username} Created new focus period for session ID: {self.session.session_id}, cycle ID: {current_cycle.id}"
+        )
 
     @database_sync_to_async
     def _get_completed_fp_duration_for_current_cycle(self, current_cycle):
@@ -176,14 +178,18 @@ class AsyncTimerService:
             last_focus_period.duration = min(fp_duration, max_time_to_save_for_focus_period)
             await last_focus_period.asave()
             logger.info(
-                f"Ended last focus period with duration: {last_focus_period.duration}, ID: {last_focus_period.id}"
+                f"{self.user.username} Ended last focus period with duration: {last_focus_period.duration}, ID: {last_focus_period.id}"
             )
-            logger.info(f"choosing a minimum b/w {fp_duration} and {max_time_to_save_for_focus_period}")
             logger.info(
-                f"last focus period ended with duration: {last_focus_period.duration} and id: {last_focus_period.id}"
+                f"{self.user.username} choosing a minimum b/w {fp_duration} and {max_time_to_save_for_focus_period}"
+            )
+            logger.info(
+                f"{self.user.username} last focus period ended with duration: {last_focus_period.duration} and id: {last_focus_period.id}"
             )
             if fp_duration > max_time_to_save_for_focus_period:
-                logger.warning(f"⚠️ Lag detected: {fp_duration - max_time_to_save_for_focus_period}")
+                logger.warning(
+                    f"{self.user.username} ⚠️ Lag detected: {fp_duration - max_time_to_save_for_focus_period}"
+                )
 
     async def _get_max_time_to_save_for_focus_period(self):
         """
@@ -213,7 +219,7 @@ class AsyncTimerService:
 
     async def pause_timer(self):
         if self.session.timer_state == FocusSession.TIMER_RUNNING:
-            logger.info(f"Pausing timer for session ID: {self.session.session_id}")
+            logger.info(f"{self.user.username} Pausing timer for session ID: {self.session.session_id}")
             self.session.timer_state = FocusSession.TIMER_PAUSED
             await self.session.asave()
             await self._save_last_focus_period_of_current_session()
@@ -224,7 +230,7 @@ class AsyncTimerService:
         we will just calculate all the time spent and end the last focus period
         and mark the session as completed
         """
-        logger.info(f"Stopping timer for user {self.user.username}, session ID: {self.session.session_id}")
+        logger.info(f"{self.user.username} Stopping timer for session ID: {self.session.session_id}")
         await self.pause_timer()  # make sure the last focus period is ended
         self.session.total_focus_completed = await self._calculate_total_focus_completed()
         self.session.timer_state = FocusSession.TIMER_COMPLETED
@@ -236,10 +242,10 @@ class AsyncTimerService:
             await self._create_new_focus_period()
             self.session.timer_state = FocusSession.TIMER_RUNNING
             await self.session.asave()
-            logger.info(f"Resumed timer for session ID: {self.session.session_id}")
+            logger.info(f"{self.user.username} Resumed timer for session ID: {self.session.session_id}")
 
     async def toggle_timer(self):
-        logger.info(f"Toggling timer for user {self.user.username}, session ID: {self.session.session_id}")
+        logger.info(f"{self.user.username} Toggling timer for session ID: {self.session.session_id}")
         timer_state = await self._get_timer_state()
         if timer_state == FocusSession.TIMER_RUNNING:
             await self.pause_timer()
@@ -266,7 +272,7 @@ class AsyncTimerService:
             all_focus_period_duration = await self._get_all_focus_period_duration_for_current_cycle(current_cycle)
             if current_cycle:
                 remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
-                logger.info(f"Remaining time: {remaining_time} for {self.user.username}")
+                logger.info(f"{self.user.username} Remaining time: {remaining_time}")
                 if remaining_time <= 0:
                     await self._change_cycle_if_needed(current_cycle, all_focus_period_duration)
                     return data

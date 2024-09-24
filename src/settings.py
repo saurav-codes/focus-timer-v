@@ -226,7 +226,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "format": "{asctime} {levelname} {ip_address} {browser} {device_type} {user} {http_status} {module} {message}",
             "style": "{",
         },
         "simple": {
@@ -237,6 +237,9 @@ LOGGING = {
     "filters": {
         "require_debug_true": {
             "()": "django.utils.log.RequireDebugTrue",
+        },
+        "custom_request_filter": {
+            "()": "src.logging_with_ip.CustomRequestFilter",
         },
     },
     "handlers": {
@@ -253,6 +256,7 @@ LOGGING = {
             "maxBytes": 1024 * 1024 * 5,  # 5 MB
             "backupCount": 5,
             "formatter": "verbose",
+            "filters": ["custom_request_filter"],
         },
     },
     "loggers": {

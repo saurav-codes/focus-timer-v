@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404
 from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
@@ -36,6 +37,9 @@ def async_session_owner_only(func):
         session_owner = await get_session_owner()
 
         if user != session_owner:
+            logger.info(
+                f"{user.username} tried to perform an action on session '{self.session_id}' but was not authorized"
+            )
             await self.send(text_data=json.dumps({"error": "You are not authorized to perform this action."}))
 
         return await func(self, *args, **kwargs)
@@ -50,6 +54,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         self.username = self.scope["url_route"]["kwargs"]["username"]
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
         self.session_group_name = f"focus_session_{self.session_id}"
+        self.request = self._generate_request_metadata()
         self.session = await database_sync_to_async(get_object_or_404)(
             FocusSession,
             session_id=self.session_id,
@@ -64,8 +69,26 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
         # add client to connected clients list
         await self._create_session_follower()
-        logger.info(f"User '{self.username}' connected to session '{self.session_id}'")
+        logger.info(f"{self.user.username} connected to session '{self.session_id}'", extra={"request": self.request})
         await self.update_session_followers_list_to_all_clients()
+
+    def _generate_request_metadata(self):
+        request = HttpRequest()
+        user_agent = str(self.scope["headers"][4][1].strip())
+        try:
+            ip_add = self.scope["client"][0]
+        except Exception:
+            ip_add = "-"
+        try:
+            user_os = user_agent.rsplit("(")[1].split(";")[0]
+        except Exception:
+            user_os = "-"
+        request.META = {
+            "REMOTE_ADDR": ip_add,
+            "HTTP_SEC_CH_UA_PLATFORM": user_os,
+        }
+        request.user = self.user
+        return request
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -79,9 +102,14 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 # which will be the last focus period of the session
                 # TODO: perform this action in a transaction or lock
                 await self.timer_service._create_new_focus_period()
-                logger.info(f"Created new focus period for session '{self.session_id}' on owner disconnect")
+                logger.info(
+                    f"Created new focus period for session '{self.session_id}' on owner disconnect",
+                    extra={"request": self.request},
+                )
         # remove user from followers list
-        logger.info(f"User '{self.username}' disconnected from session '{self.session_id}'")
+        logger.info(
+            f"{self.user.username} disconnected from session '{self.session_id}'", extra={"request": self.request}
+        )
         await self._delete_session_follower()
         # send updated followers list to all clients
         await self.update_session_followers_list_to_all_clients()
@@ -91,7 +119,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def _delete_session_follower(self):
-        logger.info(f"Removing user '{self.username}' from session '{self.session_id}' followers")
+        logger.info(
+            f"Removing user '{self.username}' from session '{self.session_id}' followers",
+            extra={"request": self.request},
+        )
         FocusSessionFollower.objects.filter(session=self.session, username=self.username).delete()
 
     @database_sync_to_async
@@ -121,19 +152,28 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         if action == "stop_timer":
             await self.stop_timer()
         if action == "sync_inactive_timer":
-            logger.info(f"Syncing inactive timer for user '{self.user.username}' in session '{self.session_id}'")
+            logger.info(
+                f"Syncing inactive timer for user '{self.user.username}' in session '{self.session_id}'",
+                extra={"request": self.request},
+            )
             await self.sync_inactive_timer(text_data)
         if action == "timer_update":
             await self.send_timer_update_to_all_clients()
 
     @async_session_owner_only
     async def toggle_timer(self, text_data):
-        logger.info(f"Toggling timer for user '{self.user.username}' in session '{self.session_id}'")
+        logger.info(
+            f"Toggling timer for user '{self.user.username}' in session '{self.session_id}'",
+            extra={"request": self.request},
+        )
         await self.timer_service.toggle_timer()
 
     @async_session_owner_only
     async def stop_timer(self):
-        logger.info(f"Stopping timer for user '{self.user.username}' in session '{self.session_id}'")
+        logger.info(
+            f"Stopping timer for user '{self.user.username}' in session '{self.session_id}'",
+            extra={"request": self.request},
+        )
         await self.timer_service.stop_timer()
 
     async def send_timer_update_to_all_clients(self):
@@ -145,7 +185,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 "timer_display_data": timer_display_data,
             },
         )
-        logger.info(f"Sent timer update to all clients in session '{self.session_id}'")
+        logger.info(f"Sent timer update to all clients in session '{self.session_id}'", extra={"request": self.request})
 
     async def timer_update(self, data):
         await self.send(text_data=json.dumps(data))
@@ -208,7 +248,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         client side and then clientside have not idea
         about the server time. so we update that time here
         """
-        logger.info(f"Syncing inactive timer for session '{self.session_id}' at {datetime.now()}")
+        logger.info(
+            f"Syncing inactive timer for session '{self.session_id}' at {datetime.now()}",
+            extra={"request": self.request},
+        )
         await self.send_timer_update_to_all_clients()
         await self.update_session_will_finish_at_to_all_clients()
         await self.update_session_followers_list_to_all_clients()
