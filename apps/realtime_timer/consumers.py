@@ -9,9 +9,9 @@ from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
 from .models import FocusSession, FocusSessionFollower
 from channels.db import database_sync_to_async
-import redis_lock
-import redis
+import redis.asyncio as aioredis
 from django.conf import settings
+from django.utils import timezone
 
 from functools import wraps
 
@@ -47,9 +47,32 @@ def async_session_owner_only(func):
     return wrapper
 
 
+def async_internal_action_only(func):
+    """
+    Decorator to check if the action is performed by an internal action
+    it should never be called by a client so the goal of this decorator
+    is to make sure that this action is never called by a client
+    """
+
+    @wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        user = self.scope["user"]
+        text_data = json.loads(args[0])
+        secret_key = text_data.get("secret_key")
+        if secret_key != settings.CYCLE_CHANGE_INTERNAL_SECRET_KEY:
+            logger.info(
+                f"{user.username} tried to perform an internal action on session '{self.session_id}' but was not authorized"
+            )
+            await self.send(text_data=json.dumps({"error": "this action is restricted to the system."}))
+
+        return await func(self, *args, **kwargs)
+
+    return wrapper
+
+
 class FocusSessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.redis_client = redis.Redis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}")
+        self.redis_client = await aioredis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}")
         self.user = self.scope["user"]
         self.username = self.scope["url_route"]["kwargs"]["username"]
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
@@ -66,6 +89,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         # even though we should be sending timer update to only connected client
         # but since we are some tab sleep issues, we are sending it to all connected clients
         await self.send_timer_update_to_all_clients()
+        await self._schedule_next_cycle_change()
 
         # add client to connected clients list
         await self._create_session_follower()
@@ -116,6 +140,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         # remove this client from the session group so
         # that it will not receive any messages
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
+        # also cancel any scheduled cycle change
+        await self._cancel_scheduled_cycle_change()
 
     @database_sync_to_async
     def _delete_session_follower(self):
@@ -157,6 +183,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                 extra={"request": self.request},
             )
             await self.sync_inactive_timer(text_data)
+        if action == "cycle_change":
+            await self.change_cycle_if_needed(text_data)
         if action == "timer_update":
             await self.send_timer_update_to_all_clients()
 
@@ -166,7 +194,59 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             f"Toggling timer for user '{self.user.username}' in session '{self.session_id}'",
             extra={"request": self.request},
         )
-        await self.timer_service.toggle_timer()
+        timer_state = await self.timer_service.toggle_timer()
+        if timer_state == "paused":
+            await self._cancel_scheduled_cycle_change()
+        elif timer_state == "resumed":
+            await self._schedule_next_cycle_change()
+
+    @async_internal_action_only
+    async def change_cycle_if_needed(self, text_data):
+        """
+        This function is called by the system to change the cycle if needed
+        it is called when the timer is stopped or when the timer is paused/resumed
+        usually it will be called by system on the scheduled time as we are using
+        redis zset to store the scheduled time to change the cycle
+        """
+        logger.info(
+            f"Changing cycle if needed for user '{self.user.username}' in session '{self.session_id}'",
+            extra={"request": self.request},
+        )
+        await self.timer_service.change_cycle_if_needed()
+        # now we have new cycle so we need to schedule the next cycle change
+        await self._schedule_next_cycle_change()
+
+    async def _schedule_next_cycle_change(self):
+        if self.session.timer_state == FocusSession.TIMER_RUNNING:
+            current_cycle = await self.timer_service._get_current_cycle()
+            all_focus_period_duration = await self.timer_service._get_all_focus_period_duration_for_current_cycle(
+                current_cycle
+            )
+            remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
+            if remaining_time < 0:
+                remaining_time = 0
+                logger.info(
+                    f"{self.user.username} cycle is already completed and we are above the scheduled time, \
+                        so we scheduling the current cycle to change right now",
+                    extra={"request": self.request},
+                )
+            next_change_time = timezone.now() + timezone.timedelta(seconds=remaining_time)
+            # first we need to check if there is already a scheduled change for this session
+            await self.redis_client.zadd(
+                "scheduled_cycle_changes", {str(self.session.session_id): next_change_time.timestamp()}
+            )
+            logger.info(
+                f"Scheduled next cycle change for user '{self.user.username}' in session '{self.session_id}' at {next_change_time}",
+                extra={"request": self.request},
+            )
+        else:
+            logger.info(
+                f"Not scheduling next cycle change for user '{self.user.username}' in session '{self.session_id}' because the timer is not running",
+                extra={"request": self.request},
+            )
+
+    async def _cancel_scheduled_cycle_change(self):
+        await self.redis_client.zrem("scheduled_cycle_changes", str(self.session.session_id))
 
     @async_session_owner_only
     async def stop_timer(self):
@@ -175,6 +255,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             extra={"request": self.request},
         )
         await self.timer_service.stop_timer()
+        await self._cancel_scheduled_cycle_change()
 
     async def send_timer_update_to_all_clients(self):
         timer_display_data = await self.timer_service.get_timer_display_data()
@@ -255,3 +336,12 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.send_timer_update_to_all_clients()
         await self.update_session_will_finish_at_to_all_clients()
         await self.update_session_followers_list_to_all_clients()
+
+    async def cycle_change(self, event):
+        """
+        Handle the cycle_change event sent by the Redis scheduler.
+        """
+        logger.info(f"Received cycle_change event for session '{self.session_id}'")
+        await self.change_cycle_if_needed(
+            json.dumps({"action": "cycle_change", "secret_key": settings.CYCLE_CHANGE_INTERNAL_SECRET_KEY})
+        )

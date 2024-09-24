@@ -212,6 +212,7 @@ SILENCED_SYSTEM_CHECKS = [
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
+CYCLE_CHANGE_INTERNAL_SECRET_KEY = os.environ.get("CYCLE_CHANGE_INTERNAL_SECRET_KEY")
 
 # before running the server, reset all the locks
 REDIS_CLIENT = redis.Redis.from_url(f"redis://{REDIS_HOST}:{REDIS_PORT}")

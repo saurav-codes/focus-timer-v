@@ -249,8 +249,10 @@ class AsyncTimerService:
         timer_state = await self._get_timer_state()
         if timer_state == FocusSession.TIMER_RUNNING:
             await self.pause_timer()
+            return "paused"
         elif timer_state == FocusSession.TIMER_PAUSED:
             await self.resume_timer()
+            return "resumed"
 
     async def get_timer_display_data(self):
         """
@@ -273,10 +275,6 @@ class AsyncTimerService:
             if current_cycle:
                 remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
                 logger.info(f"{self.user.username} Remaining time: {remaining_time}")
-                if remaining_time <= 0:
-                    await self._change_cycle_if_needed(current_cycle, all_focus_period_duration)
-                    return data
-
                 data["remaining_time"] = remaining_time
                 data["current_cycle"] = {
                     "type": current_cycle.cycle_type,
@@ -296,16 +294,23 @@ class AsyncTimerService:
                     }
         return data
 
-    async def _change_cycle_if_needed(self, current_cycle, all_focus_period_duration):
+    async def change_cycle_if_needed(self):
+        """
+        never call this method directly from client, this is only for internal purpose
+        to change the cycle if needed
+        """
+        current_cycle = await self._get_current_cycle()
+        all_focus_period_duration = await self._get_all_focus_period_duration_for_current_cycle(current_cycle)
         if await self._is_cycle_transition_needed(current_cycle, all_focus_period_duration):
-            await self._transition_to_next_cycle(current_cycle)
+            await self._transition_to_next_cycle()
 
     async def _is_cycle_transition_needed(self, current_cycle, all_focus_period_duration):
         remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
         return remaining_time <= 0
 
-    async def _transition_to_next_cycle(self, current_cycle):
+    async def _transition_to_next_cycle(self):
         await self._save_last_focus_period_of_current_session()
+        current_cycle = await self._get_current_cycle()
         current_cycle.is_completed = True
         await current_cycle.asave()
         next_cycles_qs = await database_sync_to_async(self.session.focus_cycles.filter)(  # type: ignore

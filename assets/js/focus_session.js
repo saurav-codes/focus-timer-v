@@ -172,7 +172,6 @@ class FocusSessionManager {
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
     let formattedTime = this.formatTime(seconds);
     document.title = `${formattedTime} - ${current_cycle_type}`;
-    console.log(`Updated page title to current cycle: ${formattedTime} - ${current_cycle_type}`);
   }
 
   resetPageTitle() {
