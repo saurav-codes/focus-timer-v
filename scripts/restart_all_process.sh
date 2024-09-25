@@ -6,6 +6,7 @@ set -e
 find_focus_timer_dir() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS-specific path
+        # since mac is my local machine, i know the path
         echo "/Users/sauravsharma/Developer/personal/startups/focus_timer"
     else
         # Linux path finding logic
