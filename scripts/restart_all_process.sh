@@ -9,14 +9,13 @@ find_focus_timer_dir() {
         echo "/Users/sauravsharma/Developer/personal/startups/focus_timer"
     else
         # Linux path finding logic
-        echo "Finding focus-timer directory..."
         local search_dir="$HOME"
         local focus_timer_dir=$(find "$search_dir" -type d -name "focus-timer" -print -quit)
         if [ -z "$focus_timer_dir" ]; then
             echo "Error: Could not find focus-timer directory." >&2
             exit 1
         fi
-        echo "Found focus-timer directory: $focus_timer_dir"
+        echo "$focus_timer_dir"
     fi
 }
 
@@ -52,7 +51,9 @@ run_django_command() {
 
 # Main script execution
 main() {
+    echo "Finding focus-timer directory..."
     local focus_timer_dir=$(find_focus_timer_dir)
+    echo "Found focus-timer directory: $focus_timer_dir"
     cd "$focus_timer_dir" || exit 1
 
     echo "working directory: $focus_timer_dir"
