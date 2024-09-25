@@ -217,6 +217,7 @@ CYCLE_CHANGE_INTERNAL_SECRET_KEY = os.environ.get("CYCLE_CHANGE_INTERNAL_SECRET_
 # before running the server, reset all the locks
 REDIS_CLIENT = redis.Redis.from_url(f"redis://{REDIS_HOST}:{REDIS_PORT}")
 redis_lock.reset_all(REDIS_CLIENT)
+print("All locks reset")
 
 # create logs directory if not exists
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
