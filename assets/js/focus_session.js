@@ -134,11 +134,6 @@ class FocusSessionManager {
         console.log("Current cycle is completed");
         this.remainingTime = 0;
         this.updateRemainingTimeDisplay(this.remainingTime);
-        // here we are sending timer_update to server
-        // which will make server again check the current cycle
-        // and change the cycle if needed
-        // and also send updated timer details to all clients
-        this.send_action_to_server({ "action": "timer_update" });
         return;
       }
       const currentTime = Date.now();

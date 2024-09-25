@@ -275,6 +275,10 @@ class AsyncTimerService:
             if current_cycle:
                 remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
                 logger.info(f"{self.user.username} Remaining time: {remaining_time}")
+                if remaining_time < 0:
+                    # this could happen if scheduled_cycle_changes is not working properly
+                    # in that case, we will just show 0 remaining time
+                    remaining_time = 0
                 data["remaining_time"] = remaining_time
                 data["current_cycle"] = {
                     "type": current_cycle.cycle_type,
