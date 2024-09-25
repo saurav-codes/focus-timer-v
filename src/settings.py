@@ -259,6 +259,15 @@ LOGGING = {
             "formatter": "verbose",
             "filters": ["custom_request_filter"],
         },
+        "redis_scheduler_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": BASE_DIR / "logs" / "redis_scheduler.log",
+            "maxBytes": 1024 * 1024 * 5,  # 5 MB
+            "backupCount": 5,
+            "formatter": "verbose",
+            "filters": ["custom_request_filter"],
+        },
     },
     "loggers": {
         "django": {
@@ -273,6 +282,11 @@ LOGGING = {
         "apps": {
             "handlers": ["console", "file"],
             "level": "INFO",
+        },
+        "apps.realtime_timer.management.commands.redis_scheduler": {
+            "handlers": ["console", "redis_scheduler_file"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
