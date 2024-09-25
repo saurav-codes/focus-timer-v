@@ -201,6 +201,7 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             await self._schedule_next_cycle_change()
 
     @async_internal_action_only
+    @async_session_owner_only
     async def change_cycle_if_needed(self, text_data):
         """
         This function is called by the system to change the cycle if needed
