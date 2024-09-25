@@ -184,6 +184,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             )
             await self.sync_inactive_timer(text_data)
         if action == "cycle_change":
+            logger.info(
+                f"{self.user.username} called cycle_change action",
+                extra={"request": self.request},
+            )
             await self.change_cycle_if_needed(text_data)
         if action == "timer_update":
             await self.send_timer_update_to_all_clients()
