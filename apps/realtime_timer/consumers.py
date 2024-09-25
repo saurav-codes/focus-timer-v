@@ -247,7 +247,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             )
 
     async def _cancel_scheduled_cycle_change(self):
-        await self.redis_client.zrem("scheduled_cycle_changes", str(self.session.session_id))
+        if self.session.timer_state != FocusSession.TIMER_RUNNING:
+            # only cancel the scheduled cycle change if the timer is not running
+            logger.info(f"Cancelling scheduled cycle change for session '{self.session_id}'")
+            await self.redis_client.zrem("scheduled_cycle_changes", str(self.session.session_id))
 
     @async_session_owner_only
     async def stop_timer(self):
