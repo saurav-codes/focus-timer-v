@@ -80,6 +80,8 @@ main() {
         run_django_command "migrate"
     fi
 
+    run_django_command "reset_all_redis_lock"
+
     echo "Starting all processes..."
 
     echo "Starting uvicorn server..."
