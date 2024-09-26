@@ -4,7 +4,7 @@ class FocusSessionManager {
     this.sessionId = sessionId;
     this.username = username;
     this.socket = new WebSocket(
-      `wss://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
+      `ws://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
     );
     this.socket.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
     this.socket.onclose = (e) => this.reloadWindowAfterDelay();
@@ -55,10 +55,10 @@ class FocusSessionManager {
     )
   }
 
-  sync_inactive_timer() {
-    console.log("Syncing inactive timer");
+  sync_timer() {
+    console.log("Syncing timer");
     this.send_action_to_server(
-      { "action": "sync_inactive_timer" }
+      { "action": "sync_timer" }
     )
   }
 
@@ -279,6 +279,10 @@ document.addEventListener("DOMContentLoaded", (event) => {
     focusSessionManager = new FocusSessionManager(sessionId, username);
   }
 
+  // *****************************************
+  // ********** Timer Syncing **********
+  // *****************************************
+
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
       const currentTime = Date.now();
@@ -286,7 +290,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
       const timeSinceLastSync = (currentTime - focusSessionManager.lastSyncTime) / 1000;
       if (timeSinceLastSync > 300) { // 300 seconds = 5 minutes
         console.log("Time since last sync:", timeSinceLastSync, "seconds. Syncing inactive timer.");
-        focusSessionManager.sync_inactive_timer();
+        focusSessionManager.sync_timer();
       }
     }
   });
