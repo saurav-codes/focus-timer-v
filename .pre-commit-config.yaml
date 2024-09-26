@@ -26,3 +26,9 @@ repos:
     rev: v0.2.0
     hooks:
       - id: rm-unneeded-f-str
+
+  - repo: https://github.com/adamchainz/djade-pre-commit
+    rev: 1.0.0
+    hooks:
+      - id: djade
+        args: [--target-version, "5.0"]  # Replace with Django version
