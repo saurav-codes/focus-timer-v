@@ -112,11 +112,11 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", ""),
     }
 }
-if not DEBUG:
-    # enable ssl for production
-    DATABASES["default"]["OPTIONS"] = {
-        "sslmode": "require",
-    }
+# if not DEBUG:
+#     # enable ssl for production
+#     DATABASES["default"]["OPTIONS"] = {
+#         "sslmode": "require",
+#     }
 
 
 # Password validation
