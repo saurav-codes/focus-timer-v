@@ -46,8 +46,9 @@ stop_process() {
 # Function to run Django management commands
 run_django_command() {
     local command="$1"
+    shift  # Remove the first argument
     echo "Running $command..."
-    python manage.py "$command"
+    python manage.py "$command" "$@"
 }
 
 # Main script execution
@@ -71,10 +72,10 @@ main() {
     echo "Activating virtual environment..."
     activate_venv "$focus_timer_dir"
 
-    # New: Ask user if they want to run collectstatic
-    run_django_command "collectstatic --no-input"
+    # Run collectstatic
+    run_django_command "collectstatic" "--no-input"
 
-    # New: Ask user if they want to run migrations
+    # Ask user if they want to run migrations
     read -p "Do you want to run migrations? (y/n): " run_migrations
     if [[ $run_migrations =~ ^[Yy]$ ]]; then
         run_django_command "migrate"
