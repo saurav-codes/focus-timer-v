@@ -72,7 +72,7 @@ main() {
     activate_venv "$focus_timer_dir"
 
     # New: Ask user if they want to run collectstatic
-    run_django_command "collectstatic"
+    run_django_command "collectstatic --no-input"
 
     # New: Ask user if they want to run migrations
     read -p "Do you want to run migrations? (y/n): " run_migrations
