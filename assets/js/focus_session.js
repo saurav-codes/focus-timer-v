@@ -3,7 +3,7 @@ class FocusSessionManager {
   constructor(sessionId, username, debug) {
     this.sessionId = sessionId;
     this.username = username;
-    const protocol = debug ? 'wss' : 'ws';
+    const protocol = debug ? 'ws' : 'wss';
     this.socket = new WebSocket(
       `${protocol}://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
     );
