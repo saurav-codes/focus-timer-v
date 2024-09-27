@@ -18,6 +18,8 @@ from django_htmx.http import HttpResponseClientRedirect
 
 logger = logging.getLogger(__name__)
 
+from django.conf import settings
+
 
 class HomepageView(LoginRequiredMixin, TemplateView):
     template_name = "realtime_timer/homepage.html"
@@ -77,6 +79,7 @@ class SessionDetailView(View):
                 "will_finish_at": will_finish_at,
                 "is_session_owner": is_session_owner,
                 "username": username,
+                "debug": settings.DEBUG,
             },
         )
 

@@ -1,10 +1,11 @@
 // static/js/focus_session.js
 class FocusSessionManager {
-  constructor(sessionId, username) {
+  constructor(sessionId, username, debug) {
     this.sessionId = sessionId;
     this.username = username;
+    const protocol = debug ? 'wss' : 'ws';
     this.socket = new WebSocket(
-      `ws://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
+      `${protocol}://${window.location.host}/ws/focus_session/${sessionId}/${username}`,
     );
     this.socket.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
     this.socket.onclose = (e) => this.reloadWindowAfterDelay();
@@ -134,6 +135,8 @@ class FocusSessionManager {
         console.log("Current cycle is completed");
         this.remainingTime = 0;
         this.updateRemainingTimeDisplay(this.remainingTime);
+        // send sync_timer event to server
+        this.sync_timer();
         return;
       }
       const currentTime = Date.now();
@@ -275,8 +278,9 @@ let focusSessionManager;
 document.addEventListener("DOMContentLoaded", (event) => {
   const sessionId = document.getElementById("session-id").dataset.sessionId;
   const username = document.getElementById("username").dataset.username;
+  const debug = document.getElementById("debug-mode").dataset.debug === 'true';
   if (username) {
-    focusSessionManager = new FocusSessionManager(sessionId, username);
+    focusSessionManager = new FocusSessionManager(sessionId, username, debug);
   }
 
   // *****************************************

@@ -71,6 +71,7 @@
       Session will finish at: {{ will_finish_at }}
     </div>
     {% endif %}
+    <div id="debug-mode" data-debug="{{ debug|lower }}"></div>
   </div>
   <script src="{% static 'js/hack_timer.js' %}" defer></script>
   <script src="{% static 'js/hack_timer_worker.js' %}" defer></script>
