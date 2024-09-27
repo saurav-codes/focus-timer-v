@@ -15,7 +15,7 @@ class CustomRequestFilter(logging.Filter):
                 record.browser = "-"
             try:
                 record.user = request.user.username if request.user.is_authenticated else "unauthenticated"
-            except ObjectDoesNotExist:
+            except (ObjectDoesNotExist, AttributeError):
                 record.user = "unauthenticated"
             record.http_status = getattr(record, "status_code", "-")
         else:
