@@ -11,7 +11,7 @@ find_focus_timer_dir() {
     else
         # Linux path finding logic
         local search_dir="$HOME"
-        local focus_timer_dir=$(find "$search_dir" -type d -name "focus-timer" -print -quit)
+        local focus_timer_dir=$(find "$search_dir" -type d -name "focus-timer-v" -print -quit)
         if [ -z "$focus_timer_dir" ]; then
             echo "Error: Could not find focus-timer directory." >&2
             exit 1
