@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 import logging
 from django.conf import settings
+import redis
 import redis_lock
 
 logger = logging.getLogger(__name__)
@@ -11,5 +12,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.SUCCESS("Resetting all redis locks"))
-        redis_lock.reset_all(settings.REDIS_CLIENT)
+        redis_client = redis.Redis.from_url(f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}")
+        redis_lock.reset_all(redis_client)
         self.stdout.write(self.style.SUCCESS("All redis locks reset"))

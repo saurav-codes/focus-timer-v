@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import redis
 
 
 # Load environment variables from .env file
@@ -218,9 +217,6 @@ SILENCED_SYSTEM_CHECKS = [
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
 CYCLE_CHANGE_INTERNAL_SECRET_KEY = os.environ.get("CYCLE_CHANGE_INTERNAL_SECRET_KEY")
-
-# before running the server, reset all the locks
-REDIS_CLIENT = redis.Redis.from_url(f"redis://{REDIS_HOST}:{REDIS_PORT}")
 
 # create logs directory if not exists
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
