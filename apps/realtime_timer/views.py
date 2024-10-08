@@ -1,24 +1,23 @@
 from typing import Any
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404, render, redirect
-from channels.layers import get_channel_layer
+from django.shortcuts import get_object_or_404, render
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusSession, FocusSessionFollower
-from django.contrib import messages
+from apps.realtime_timer.models import FocusSession
 
 from .business_logic import selectors
 from .forms import FocusSessionForm
 from django_htmx.http import HttpResponseClientRedirect
 
-logger = logging.getLogger(__name__)
-
 from django.conf import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class HomepageView(LoginRequiredMixin, TemplateView):
@@ -53,9 +52,9 @@ class MainSessionView(LoginRequiredMixin, TemplateView):
 
 class SessionDetailView(View):
     def get(self, request, session_id):
-        focus_session = selectors.get_focus_session_by_id(session_id=session_id)
+        focus_session = get_object_or_404(FocusSession, session_id=session_id)
         if request.user.is_authenticated:
-            will_finish_at = selectors.get_session_will_finish_at(request_user=request.user, session=focus_session)
+            will_finish_at = async_to_sync(selectors.get_session_will_finish_at_async)(session=focus_session)
             is_session_owner = focus_session.owner == request.user
             username = request.user.username
             logger.info(
@@ -90,7 +89,7 @@ class SessionDetailView(View):
         # TODO: sanitize username to avoid hackers
         username = request.POST.get("username", None)
         # check if username is already in session followers
-        focus_session = selectors.get_focus_session_by_id(session_id=session_id)
+        focus_session = get_object_or_404(FocusSession, session_id=session_id)
         if focus_session.followers.filter(username=username).exists():  # type: ignore
             # username is already in session followers
             # so we will redirect to session detail page

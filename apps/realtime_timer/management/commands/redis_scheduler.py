@@ -5,6 +5,11 @@ from channels.layers import get_channel_layer
 import logging
 import time
 from django.core.management.base import BaseCommand
+from apps.realtime_timer.business_logic import selectors
+from apps.realtime_timer.business_logic.services import AsyncTimerService
+from apps.realtime_timer.models import FocusSession
+from channels.db import database_sync_to_async
+from apps.realtime_timer.business_logic.services import trigger_sync_timer_for_all_connected_clients
 
 logger = logging.getLogger(__name__)
 
@@ -18,50 +23,54 @@ class RedisScheduler:
         while True:
             try:
                 now = time.time()
-                # Use ZRANGEBYSCORE with a limit to avoid large result sets
-                due_changes = await self.redis.zrangebyscore(
-                    "scheduled_cycle_changes", 0, now, start=0, num=100  # Process max 100 items per iteration
-                )
-
+                due_changes = await self.redis.zrangebyscore("scheduled_cycle_changes", 0, now, start=0, num=100)
                 if due_changes:
                     for session_id in due_changes:
-                        logger.info("----------------------REDIS_SCHEDULER----------------------")
+                        logger.info("--------------------------------------------")
                         await self.process_change(session_id)
-                        logger.info("----------------------REDIS_SCHEDULER----------------------")
-
-                    # Adaptive sleep: sleep less if there were changes
+                        logger.info("--------------------------------------------")
+                    # TODO: remove this wait if possible
                     await asyncio.sleep(0.1)
                 else:
-                    # Sleep longer if no changes were found
-                    # More visually appealing Unicode-based spinner
                     spinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
-                    for _ in range(10):  # Spin for about 1 second
+                    for _ in range(10):
                         print(f"\rWaiting for changes {spinner[_ % len(spinner)]}", end="", flush=True)
                         await asyncio.sleep(0.1)
-                    print("\r" + " " * 30 + "\r", end="", flush=True)  # Clear the spinner
+                    print("\r" + " " * 30 + "\r", end="", flush=True)
                     await asyncio.sleep(1)
-
             except redis.RedisError as e:
                 logger.error(f"Redis error: {e}")
-                await asyncio.sleep(5)  # Back off on errors
+                await asyncio.sleep(5)
             except Exception as e:
                 logger.error(f"Unexpected error: {e}")
                 await asyncio.sleep(5)
 
     async def process_change(self, session_id):
         try:
-            logger.info(f"redis_scheduler: Processing change for session {session_id}")
-            await self.channel_layer.group_send(  # type: ignore
-                f"focus_session_{session_id.decode()}",
-                {
-                    "type": "cycle_change",
-                },
-            )
-            logger.info(f"redis_scheduler: Sent cycle_change event for session {session_id}")
-            await self.redis.zrem("scheduled_cycle_changes", session_id)
-            logger.info(f"redis_scheduler: Removed scheduled_cycle_changes for session queue with key {session_id}")
+            session_id = session_id.decode()
+            session = await selectors.get_session_by_id_async(session_id)
+            session_owner = await selectors.get_session_owner_async(session)
+            if not session:
+                logger.error(f"Session {session_id} not found, skipping processing")
+                await self.redis.zrem("scheduled_cycle_changes", session_id)
+                return
+            timer_service = AsyncTimerService(session_id, session_owner, session_owner.username)
+            if session.timer_state == FocusSession.TIMER_RUNNING:
+                logger.info(f"calling timer_service.change_cycle_if_needed for session {session_id}")
+                await timer_service.change_cycle_if_needed(session)
+                # logger.info(f"calling trigger_sync_timer_for_all_connected_clients for session {session_id}")
+                # await trigger_sync_timer_for_all_connected_clients(session_id)
+                logger.info(f"calling timer_service.schedule_next_cycle_change for session {session_id}")
+                await self.redis.zrem("scheduled_cycle_changes", session_id)
+                await timer_service.schedule_next_cycle_change(self.redis)
+                logger.info(f"cycle change completed for session {session_id}")
+            else:
+                logger.info(f"session {session_id} is not running, skipping cycle change")
+                await self.redis.zrem("scheduled_cycle_changes", session_id)
         except Exception as e:
+            await self.redis.zrem("scheduled_cycle_changes", session_id)
             logger.error(f"Error processing change for session {session_id}: {e}")
+            logger.exception("Full traceback:")
 
 
 class Command(BaseCommand):

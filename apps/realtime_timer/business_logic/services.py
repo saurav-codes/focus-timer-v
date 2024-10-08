@@ -1,18 +1,15 @@
-import asyncio
-import random
 import logging
 from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
 
+from apps.realtime_timer.business_logic import selectors
+
 from ..models import FocusPeriod, FocusSession, FocusCycle, FocusSessionFollower
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
 from django.utils import timezone
 from channels.db import database_sync_to_async
-from django.conf import settings
-import redis_lock
+from django.db import transaction
 from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 
 User = get_user_model()
 
@@ -96,85 +93,64 @@ def fetch_focus_cycles_data_from_post_request(request: HttpRequest) -> dict | Ht
 
 
 class AsyncTimerService:
-    def __init__(self, session: FocusSession, user) -> None:
-        self.session = session
+    def __init__(self, session_id: str, user, username: str) -> None:
+        self.session_id = session_id
         self.user = user
-        logger.info(f"AsyncTimerService initialized for session ID: {session.session_id}, user: {user.username}")
+        self.username = username
+        logger.info(f"AsyncTimerService initialized for session ID: {session_id}, user: {user.username}")
 
     @database_sync_to_async
-    def _get_timer_state(self):
-        return self.session.timer_state
+    def create_session_follower(self, session: FocusSession):
+        with transaction.atomic():
+            if self.user.is_authenticated:
+                FocusSessionFollower.objects.get_or_create(
+                    session=session,
+                    user=self.user,
+                    username=self.user.username,
+                    user_type="authenticated",
+                )
+            else:
+                FocusSessionFollower.objects.get_or_create(
+                    session=session,
+                    username=self.username,
+                    user_type="guest",
+                )
 
     @database_sync_to_async
-    def _get_session_owner(self):
-        return self.session.owner
-
-    @database_sync_to_async
-    def _get_current_cycle(self):
-        return FocusCycle.objects.get(id=self.session.current_cycle_id)  # type: ignore
-
-    async def _create_new_focus_period(self):
-        current_cycle = await self._get_current_cycle()
-        await database_sync_to_async(FocusPeriod.objects.create)(session=self.session, cycle=current_cycle)
+    def delete_session_follower(self):
+        FocusSessionFollower.objects.filter(session_id=self.session_id, username=self.user.username).delete()
         logger.info(
-            f"{self.user.username} Created new focus period for session ID: {self.session.session_id}, cycle ID: {current_cycle.id}"
+            f"Removing user '{self.user.username}' from session '{self.session_id}' followers",
         )
 
     @database_sync_to_async
-    def _get_completed_fp_duration_for_current_cycle(self, current_cycle):
-        completed_fp_duration = (
-            FocusPeriod.objects.filter(
-                cycle=current_cycle,
-                ended_at__isnull=False,
+    def create_new_focus_period(self, session: FocusSession, current_cycle: FocusCycle):
+        with transaction.atomic():
+            FocusPeriod.objects.create(session=session, cycle=current_cycle)
+            logger.info(
+                f"{self.user.username} Created new focus period for session ID: {session.session_id}, cycle ID: {current_cycle.pk}"
             )
-            .only("duration")
-            .aggregate(total_time_focused=Sum("duration"))["total_time_focused"]
-        )
-        if not completed_fp_duration:
-            # this means that this session is just started which is why it doesn't have
-            # any finished sessions yet so we set an 0 timedelta so that it doesn't give
-            # any error in calculations
-            completed_fp_duration = timezone.timedelta(0)
-        return completed_fp_duration
 
-    @database_sync_to_async
-    def _get_duration_for_unfinished_fp_for_current_cycle(self, current_cycle):
-        timer_started_at_for_unfinished_fp = (
-            FocusPeriod.objects.filter(
-                cycle=current_cycle,
-                ended_at__isnull=True,  # the current focus period
-            )
-            .only("started_at")
-            .first()
-        )
-        if timer_started_at_for_unfinished_fp:
-            duration_for_unfinished_fp = timezone.now() - timer_started_at_for_unfinished_fp.started_at
-        else:
-            duration_for_unfinished_fp = timezone.timedelta(0)
-        return duration_for_unfinished_fp
-
-    async def _get_all_focus_period_duration_for_current_cycle(self, current_cycle) -> timezone.timedelta:
-        total_time_focused_for_finished_fp = await self._get_completed_fp_duration_for_current_cycle(current_cycle)
-        duration_for_unfinished_fp = await self._get_duration_for_unfinished_fp_for_current_cycle(current_cycle)
-        return total_time_focused_for_finished_fp + duration_for_unfinished_fp
-
-    async def _save_last_focus_period_of_current_session(self):
+    async def save_last_focus_period(self, current_session: FocusSession):
         """
         this function is used to end the last focus period of the current session
         it's used when the timer is paused or stopped or when the user is done with the current cycle
         so we save the time for the last focus period.
         """
         # get the last focus period
-        last_focus_period = await database_sync_to_async(self.session.focus_periods.last)()  # type:ignore
+        last_focus_period = await selectors.get_last_focus_period_async(current_session)
         if last_focus_period and not last_focus_period.ended_at:
+            # since we are going to write to db we need to get a locked row to avoid race condition
+            last_focus_period = await selectors.get_last_focus_period_locked_async(current_session)
             # if the last focus period is not ended, end it
             last_focus_period.ended_at = timezone.now()
             # calculate the duration of the last focus period
             fp_duration = last_focus_period.ended_at - last_focus_period.started_at
-            # sometime this method is called after a long time like
             # when tab/browser sleeps & as they get active again, it's
             # more time passed already then it was in cycle.
-            max_time_to_save_for_focus_period = await self._get_max_time_to_save_for_focus_period()
+            max_time_to_save_for_focus_period = await selectors.get_max_time_to_save_for_focus_period_async(
+                current_cycle=current_session.current_cycle  # type: ignore
+            )
             last_focus_period.duration = min(fp_duration, max_time_to_save_for_focus_period)
             await last_focus_period.asave()
             logger.info(
@@ -191,38 +167,13 @@ class AsyncTimerService:
                     f"{self.user.username} ⚠️ Lag detected: {fp_duration - max_time_to_save_for_focus_period}"
                 )
 
-    async def _get_max_time_to_save_for_focus_period(self):
-        """
-        this function returns the max duration we can save to current focus period
-        while keeping in mind that sometime this method is called after a long time
-        like when tab/browser sleeps & as they get active again, it's more time
-        passed already then it was in cycle duration. so we need to make sure that
-        we don't save more time then the cycle duration time left in the current cycle.
-        """
-        # first get all focus periods for the current cycle
-        current_cycle = await self._get_current_cycle()
-        completed_fp_duration = await self._get_completed_fp_duration_for_current_cycle(current_cycle)
-        return current_cycle.duration - completed_fp_duration
-
-    async def _calculate_total_focus_completed(self):
-        # either choose the last resumed time or the started time
-        # because the last resumed time will be None if the user started the session
-        # and it will contain value if the user resumed the session
-        # only call this method once the session is completed
-        total_focused_time_qs = await database_sync_to_async(
-            self.session.focus_periods.values("duration").aggregate  # type:ignore
-        )(  # type: ignore
-            total_time_focused=Sum("duration")
-        )
-        total_focused_time = total_focused_time_qs["total_time_focused"] or timezone.timedelta(0)
-        return total_focused_time
-
-    async def pause_timer(self):
-        if self.session.timer_state == FocusSession.TIMER_RUNNING:
-            logger.info(f"{self.user.username} Pausing timer for session ID: {self.session.session_id}")
-            self.session.timer_state = FocusSession.TIMER_PAUSED
-            await self.session.asave()
-            await self._save_last_focus_period_of_current_session()
+    async def pause_timer(self, trigger_sync_timer=True):
+        focus_session = await selectors.get_session_by_id_locked_async(self.session_id)
+        if focus_session.timer_state == FocusSession.TIMER_RUNNING:
+            logger.info(f"{self.user.username} Pausing timer for session ID: {focus_session.session_id}")
+            focus_session.timer_state = FocusSession.TIMER_PAUSED
+            await focus_session.asave(trigger_timer_sync=trigger_sync_timer)
+            await self.save_last_focus_period(focus_session)
 
     async def stop_timer(self):
         """
@@ -230,81 +181,114 @@ class AsyncTimerService:
         we will just calculate all the time spent and end the last focus period
         and mark the session as completed
         """
-        logger.info(f"{self.user.username} Stopping timer for session ID: {self.session.session_id}")
-        await self.pause_timer()  # make sure the last focus period is ended
-        self.session.total_focus_completed = await self._calculate_total_focus_completed()
-        self.session.timer_state = FocusSession.TIMER_COMPLETED
-        await self.session.asave()
+        logger.info(f"{self.user.username} Stopping timer for session ID: {self.session_id}")
+        await self.pause_timer(trigger_sync_timer=False)  # make sure the last focus period is ended
+        session = await selectors.get_session_by_id_locked_async(self.session_id)
+        current_cycle = await selectors.get_current_cycle_async(session)
+        session.total_focus_completed = await selectors.get_all_focus_period_duration_for_current_cycle_async(
+            current_cycle
+        )
+        session.timer_state = FocusSession.TIMER_COMPLETED
+        # syncing the timer after saving is neccessary so no choice here
+        # other than direct passing trigger_timer_sync = True
+        await session.asave(trigger_timer_sync=True)
 
     async def resume_timer(self):
-        if self.session.timer_state == FocusSession.TIMER_PAUSED:
+        session = await selectors.get_session_by_id_locked_async(self.session_id)
+        if session.timer_state == FocusSession.TIMER_PAUSED:
             # just add a new focus period
-            await self._create_new_focus_period()
-            self.session.timer_state = FocusSession.TIMER_RUNNING
-            await self.session.asave()
-            logger.info(f"{self.user.username} Resumed timer for session ID: {self.session.session_id}")
+            current_cycle = await selectors.get_current_cycle_async(session)
+            await self.create_new_focus_period(session, current_cycle)
+            session.timer_state = FocusSession.TIMER_RUNNING
+            await session.asave(trigger_timer_sync=True)
+            logger.info(f"{self.user.username} Resumed timer for session ID: {session.session_id}")
 
     async def toggle_timer(self):
-        logger.info(f"{self.user.username} Toggling timer for session ID: {self.session.session_id}")
-        timer_state = await self._get_timer_state()
-        if timer_state == FocusSession.TIMER_RUNNING:
-            await self.pause_timer()
+        logger.info(f"{self.user.username} Toggling timer for session ID: {self.session_id}")
+        session = await selectors.get_session_by_id_async(self.session_id)
+        if session.timer_state == FocusSession.TIMER_RUNNING:
+            await self.pause_timer(trigger_sync_timer=True)
             return "paused"
-        elif timer_state == FocusSession.TIMER_PAUSED:
+        elif session.timer_state == FocusSession.TIMER_PAUSED:
             await self.resume_timer()
             return "resumed"
 
-    async def get_timer_display_data(self):
+    async def schedule_only_first_cycle_change(self, redis_client):
         """
-        return the remaining for current cycle.
-        it uses cache and needs to be called every second to count
-        correctly.
-        call this inside the websocket consumer every second to send
-        the update time to the client
+        This function is called to schedule the first cycle change
+        after the timer is started
         """
-        data = {
-            "remaining_time": 0,
-            "current_cycle": {},
-            "focus_cycles": {},
-            "timer_state": self.session.timer_state,
-        }
-        if not self.session.timer_state == FocusSession.TIMER_COMPLETED:
-            current_cycle = await self._get_current_cycle()
-            # also get all focus period durations
-            all_focus_period_duration = await self._get_all_focus_period_duration_for_current_cycle(current_cycle)
-            if current_cycle:
+        session = await selectors.get_session_by_id_async(self.session_id)
+        logger.info(
+            f"Scheduling first cycle change for user '{self.user.username}' in session '{self.session_id}'",
+        )
+        if session.timer_state == FocusSession.TIMER_RUNNING:
+            current_cycle = await selectors.get_current_cycle_async(session)
+            if current_cycle.order == 1 and not current_cycle.is_scheduled:
+                # get the locked row of current cycle to avoid race condition
+                current_cycle = await selectors.get_current_cycle_locked_async(session)
+                all_focus_period_duration = await selectors.get_completed_fp_duration_for_current_cycle_async(
+                    current_cycle
+                )
                 remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
-                logger.info(f"{self.user.username} Remaining time: {remaining_time}")
                 if remaining_time < 0:
-                    # this could happen if scheduled_cycle_changes is not working properly
-                    # in that case, we will just show 0 remaining time
                     remaining_time = 0
-                data["remaining_time"] = remaining_time
-                data["current_cycle"] = {
-                    "type": current_cycle.cycle_type,
-                    "order": current_cycle.order,
-                    "duration_seconds": current_cycle.duration.seconds,
-                }
-                # also add remaining cycles data
-                focus_cycles = await database_sync_to_async(list)(
-                    self.session.focus_cycles.all()  # type: ignore
-                )  # get all cycles after current one
-                for focus_cycle in focus_cycles:
-                    data["focus_cycles"][str(focus_cycle.order)] = {
-                        "type": focus_cycle.cycle_type,
-                        "duration_seconds": focus_cycle.duration.seconds,
-                        "is_completed": focus_cycle.is_completed,
-                        "order": focus_cycle.order,
-                    }
-        return data
+                    logger.info(
+                        f"{self.user.username} first cycle is already completed and we are above the scheduled time, \
+                            so we scheduling the current cycle to change right now",
+                    )
+                next_change_time = timezone.now() + timezone.timedelta(seconds=remaining_time)
+                # first we need to check if there is already a scheduled change for this session
+                await redis_client.zadd("scheduled_cycle_changes", {str(self.session_id): next_change_time.timestamp()})
+                logger.info(
+                    f"Scheduled first cycle change for user '{self.user.username}' in session '{self.session_id}' at {next_change_time}",
+                )
+                current_cycle.is_scheduled = True
+                await current_cycle.asave()
 
-    async def change_cycle_if_needed(self):
+    async def schedule_next_cycle_change(self, redis_client):
+        session = await selectors.get_session_by_id_async(self.session_id)
+        if session.timer_state == FocusSession.TIMER_RUNNING:
+            current_cycle = await selectors.get_current_cycle_async(session)
+            if current_cycle.is_scheduled:
+                logger.info(
+                    f"Not scheduling next cycle change for user '{self.user.username}' in session '{self.session_id}' because it's already scheduled"
+                )
+                return
+            # get the locked row of current cycle to avoid race condition
+            current_cycle = await selectors.get_current_cycle_locked_async(session)
+            all_focus_period_duration = await selectors.get_completed_fp_duration_for_current_cycle_async(current_cycle)  # type: ignore
+            remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds  # type: ignore
+            if remaining_time < 0:
+                remaining_time = 0
+                logger.info(
+                    f"{self.user.username} cycle is already completed and we are above the scheduled time, \
+                        so we scheduling the current cycle to change right now",
+                )
+            next_change_time = timezone.now() + timezone.timedelta(seconds=remaining_time)
+            # first we need to check if there is already a scheduled change for this session
+            await redis_client.zadd("scheduled_cycle_changes", {str(self.session_id): next_change_time.timestamp()})
+            logger.info(
+                f"Scheduled next cycle change for user '{self.user.username}' in session '{self.session_id}' at {next_change_time}",
+            )
+            current_cycle.is_scheduled = True
+            await current_cycle.asave()
+        else:
+            logger.info(
+                f"Not scheduling next cycle change for user '{self.user.username}' in session '{self.session_id}' because the timer is not running",
+            )
+            logger.warning(
+                f"BUG: Timer is not running for session '{self.session_id}'. so find why this is happening",
+                exc_info=True,
+            )
+
+    async def change_cycle_if_needed(self, session: FocusSession):
         """
         never call this method directly from client, this is only for internal purpose
         to change the cycle if needed
         """
-        current_cycle = await self._get_current_cycle()
-        all_focus_period_duration = await self._get_all_focus_period_duration_for_current_cycle(current_cycle)
+        current_cycle = await selectors.get_current_cycle_async(session)
+        all_focus_period_duration = await selectors.get_all_focus_period_duration_for_current_cycle_async(current_cycle)
         if await self._is_cycle_transition_needed(current_cycle, all_focus_period_duration):
             await self._transition_to_next_cycle()
 
@@ -312,33 +296,60 @@ class AsyncTimerService:
         remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
         return remaining_time <= 0
 
+    async def cancel_scheduled_cycle_change_if_timer_stopped(self, redis_client, session_id: str):
+        """
+        This function will cancel the scheduled cycle change if the timer
+        paused or stopped
+        """
+        session = await selectors.get_session_by_id_async(session_id)
+        if session.timer_state != FocusSession.TIMER_RUNNING:
+            # only cancel the scheduled cycle change if the timer is not running
+            logger.info(f"Cancelling scheduled cycle change for session '{session_id}'")
+            await redis_client.zrem("scheduled_cycle_changes", str(session_id))
+            current_cycle = await selectors.get_current_cycle_locked_async(session)
+            current_cycle.is_scheduled = False
+            await current_cycle.asave()
+
     async def _transition_to_next_cycle(self):
-        await self._save_last_focus_period_of_current_session()
-        current_cycle = await self._get_current_cycle()
-        current_cycle.is_completed = True
-        await current_cycle.asave()
-        next_cycles_qs = await database_sync_to_async(self.session.focus_cycles.filter)(  # type: ignore
-            order__gt=current_cycle.order
+        session = await selectors.get_session_by_id_async(self.session_id)
+        await self.save_last_focus_period(session)
+        logger.info("saved last focus session while changing cycle")
+        current_cycle = await selectors.get_current_cycle_locked_async(session)
+        logger.info(
+            f"current cycle is duration - {current_cycle.duration}\
+             & type - {current_cycle.cycle_type}\
+             & order - {current_cycle.order}"
+        )
+        current_cycle.is_completed = True  # type: ignore
+        logger.info("marked current cycle as completed")
+        await current_cycle.asave()  # type: ignore
+        next_cycles_qs = await database_sync_to_async(FocusCycle.objects.filter)(  # type: ignore
+            order__gt=current_cycle.order, session=session  # type: ignore
         )
         next_cycle = await database_sync_to_async(next_cycles_qs.first)()
         if next_cycle:
-            self.session.current_cycle = next_cycle
-            await self.session.asave()
+            # get the locked row of session to avoid race condition
+            # this increase the db query count because we are again
+            # getting the session but it's okay for now because we
+            # don't want any race conditions
+            # TODO: find a better solution to avoid db query count increase
+            session = await selectors.get_session_by_id_locked_async(self.session_id)
+            session.current_cycle = next_cycle
+            await session.asave(trigger_timer_sync=True)
             # create a new focus period for the next cycle
-            await database_sync_to_async(FocusPeriod.objects.create)(
-                session=self.session,
-                cycle=next_cycle,
-            )
+            await self.create_new_focus_period(session, next_cycle)
+            logger.info(f"transitioned to next cycle with order - {next_cycle.order} & type - {next_cycle.cycle_type}")
         else:
             # since there is no next cycle, we will stop the timer
             await self.stop_timer()
 
 
-async def trigger_sync_inactive_timer_for_all_connected_clients(session_id: str):
+async def trigger_sync_timer_for_all_connected_clients(session_id: str):
     channel_layer = get_channel_layer()
     await channel_layer.group_send(  # type: ignore
         f"focus_session_{session_id}",
         {
-            "type": "sync_inactive_timer",
+            "type": "sync_timer",
         },
     )
+    logger.info(f"Triggered sync_timer for all connected clients for session ID: {session_id}")

@@ -135,8 +135,6 @@ class FocusSessionManager {
         console.log("Current cycle is completed");
         this.remainingTime = 0;
         this.updateRemainingTimeDisplay(this.remainingTime);
-        // send sync_timer event to server
-        this.sync_timer();
         return;
       }
       const currentTime = Date.now();

@@ -60,14 +60,16 @@ class FocusSession(models.Model):
         return f"Session {self.session_id} by {self.owner.username}"
 
     async def asave(self, *args, **kwargs):
+        trigger_timer_sync = kwargs.pop("trigger_timer_sync", False)
         await super().asave(*args, **kwargs)
-        # trigger the sync_inactive_timer consumer method
-        # to sync the timer for the clients who are not actively
+        # trigger the sync_timer consumer method
+        # to sync the timer for the clients who are actively
         # working on this session
-        from apps.realtime_timer.business_logic.services import trigger_sync_inactive_timer_for_all_connected_clients
+        if trigger_timer_sync:
+            from apps.realtime_timer.business_logic.services import trigger_sync_timer_for_all_connected_clients
 
-        logger.info("model:focus_session:save:sync_inactive_timer triggered")
-        await trigger_sync_inactive_timer_for_all_connected_clients(str(self.session_id))
+            logger.info(f"model:focus_session:save:sync_timer triggered for session {self.session_id}")
+            await trigger_sync_timer_for_all_connected_clients(str(self.session_id))
 
     def get_absolute_url(self):
         return reverse("realtime_timer:session-detail-view", kwargs={"session_id": self.session_id})
@@ -113,6 +115,7 @@ class FocusCycle(models.Model):
     duration = models.DurationField(help_text="Duration in minutes")
     order = models.PositiveIntegerField()
     is_completed = models.BooleanField(default=False)
+    is_scheduled = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.cycle_type} - {self.duration} minutes"
