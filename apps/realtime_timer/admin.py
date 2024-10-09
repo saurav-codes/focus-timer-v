@@ -62,12 +62,21 @@ class FocusPeriodAdmin(admin.ModelAdmin):
         "duration",
     )
     list_filter = ("started_at", "ended_at")
+    raw_id_fields = ("session", "cycle")
 
 
 @admin.register(FocusCycle)
 class FocusCycleAdmin(admin.ModelAdmin):
-    list_display = ("id", "session", "cycle_type", "duration", "order")
-    raw_id_fields = ("session",)
+    list_display = (
+        "id",
+        "session",
+        "cycle_type",
+        "duration",
+        "order",
+        "is_completed",
+        "is_scheduled",
+    )
+    list_filter = ("is_completed", "is_scheduled")
 
 
 @admin.register(Task)
@@ -101,5 +110,5 @@ class FocusSessionFollowerAdmin(admin.ModelAdmin):
         "joined_at",
         "user_type",
     )
-    list_filter = ("user_type", "joined_at")
+    list_filter = ("joined_at",)
     date_hierarchy = "joined_at"
