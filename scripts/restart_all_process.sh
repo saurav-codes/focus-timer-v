@@ -81,6 +81,12 @@ main() {
         run_django_command "migrate"
     fi
 
+    echo "Setting correct permissions for static files..."
+    sudo chown -R $USER:www-data "$focus_timer_dir/production_static_files"
+    sudo find "$focus_timer_dir/production_static_files" -type d -exec chmod 755 {} \;
+    sudo find "$focus_timer_dir/production_static_files" -type f -exec chmod 644 {} \;
+    sudo chmod +x /home /home/$(whoami) "$focus_timer_dir"
+
     run_django_command "reset_all_redis_lock"
 
     echo "Starting all processes..."
