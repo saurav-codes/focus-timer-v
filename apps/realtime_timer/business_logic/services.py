@@ -184,10 +184,7 @@ class AsyncTimerService:
         logger.info(f"{self.user.username} Stopping timer for session ID: {self.session_id}")
         await self.pause_timer(trigger_sync_timer=False)  # make sure the last focus period is ended
         session = await selectors.get_session_by_id_locked_async(self.session_id)
-        current_cycle = await selectors.get_current_cycle_async(session)
-        session.total_focus_completed = await selectors.get_all_focus_period_duration_for_current_cycle_async(
-            current_cycle
-        )
+        session.total_focus_completed = await selectors.calculate_total_focus_completed_async(session)
         session.timer_state = FocusSession.TIMER_COMPLETED
         # syncing the timer after saving is neccessary so no choice here
         # other than direct passing trigger_timer_sync = True
