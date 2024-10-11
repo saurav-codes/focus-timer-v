@@ -3,15 +3,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Focus Timer - A tool to help you stay focused and productive">
+        <meta name="keywords" content="focus, timer, productivity, pomodoro, time management">
         <title>
             {% block title %}Focus Timer{% endblock %}
         </title>
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
                 defer></script>
         <script>
-	      window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async function(OneSignal) {
-                    await OneSignal.init({
+                await OneSignal.init({
                     appId:"cc25f71c-5bd2-4077-98d7-aca31f76a805",
                     safari_web_id: "web.onesignal.auto.613528e9-2930-4b07-a098-5a9518822d98",
                     notifyButton: {

@@ -5,6 +5,7 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
+from .business_logic.onesignal import send_onesignal_notification
 from .utils import generate_request_metadata
 from .models import FocusSession
 import redis.asyncio as aioredis
@@ -37,6 +38,9 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.timer_service.create_session_follower(session)
         logger.info(f"{self.user.username} connected to session '{self.session_id}'", extra={"request": self.request})
         await self.update_session_followers_list_to_all_clients()
+
+        # Send OneSignal tag for this session
+        await self.send(text_data=json.dumps({"type": "onesignal_tag", "session_id": self.session_id}))
 
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
@@ -113,7 +117,13 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             f"Changing cycle if needed for user '{self.user.username}' in session '{self.session_id}'",
             extra={"request": self.request},
         )
-        await self.timer_service.change_cycle_if_needed(session=session)
+        cycle_changed = await self.timer_service.change_cycle_if_needed(session=session)
+        if cycle_changed:
+            # Send notification when cycle changes
+            cycle_type = session.current_cycle.cycle_type.lower()
+            message = f"Time's up! Your {cycle_type} session has ended."
+            await send_onesignal_notification(self.session_id, message)
+
         # now we have new cycle so we need to schedule the next cycle change
         await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
 
@@ -125,6 +135,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         )
         await self.timer_service.stop_timer()
         await self.timer_service.cancel_scheduled_cycle_change_if_timer_stopped(self.redis_client, self.session_id)
+
+        # Send notification when timer is completed
+        message = "Congratulations! You've completed your focus session."
+        await send_onesignal_notification(self.session_id, message)
 
     async def send_timer_update_to_all_clients(self):
         session = await selectors.get_session_by_id_async(self.session_id)

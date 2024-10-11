@@ -290,3 +290,7 @@ LOGGING = {
         },
     },
 }
+
+
+ONESIGNAL_APP_ID = os.environ.get("ONESIGNAL_APP_ID")
+ONESIGNAL_REST_API_KEY = os.environ.get("ONESIGNAL_REST_API_KEY")

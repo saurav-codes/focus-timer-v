@@ -34,6 +34,8 @@ class FocusSessionManager {
     } else if (data.type === "will_finish_at_update") {
       console.log("Received will finish at update from server", data);
       this.update_will_finish_at_display(data);
+    } else if (data.type === "onesignal_tag") {
+      this.setOneSignalTag(data.session_id);
     }
   }
 
@@ -256,6 +258,15 @@ class FocusSessionManager {
         followersContainer.innerHTML += '</ul>';
         console.log("Updated session followers list in UI");
       }
+    }
+  }
+
+  setOneSignalTag(sessionId) {
+    if (typeof OneSignal !== 'undefined') {
+      OneSignal.sendTag("session_id", sessionId);
+      console.log(`Set OneSignal tag for session: ${sessionId}`);
+    } else {
+      console.error("OneSignal is not defined");
     }
   }
 

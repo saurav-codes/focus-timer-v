@@ -288,6 +288,8 @@ class AsyncTimerService:
         all_focus_period_duration = await selectors.get_all_focus_period_duration_for_current_cycle_async(current_cycle)
         if await self._is_cycle_transition_needed(current_cycle, all_focus_period_duration):
             await self._transition_to_next_cycle()
+            return True
+        return False
 
     async def _is_cycle_transition_needed(self, current_cycle, all_focus_period_duration):
         remaining_time = current_cycle.duration.seconds - all_focus_period_duration.seconds
