@@ -5,13 +5,13 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
-from django.db.models import Sum, Avg, Count, Q
+from django.db.models import Sum, Avg, Count
 from django.utils import timezone
 from datetime import timedelta
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusSession, FocusCycle
+from apps.realtime_timer.models import FocusSession
 
 from .business_logic import selectors
 from .forms import FocusSessionForm

@@ -4,8 +4,6 @@ from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from timezone_field import TimeZoneField
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
 import logging
 
 logger = logging.getLogger(__name__)

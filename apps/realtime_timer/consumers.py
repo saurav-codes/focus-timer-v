@@ -5,7 +5,6 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .business_logic import selectors
 from .business_logic.services import AsyncTimerService
-from .business_logic.onesignal import send_onesignal_notification
 from .utils import generate_request_metadata
 from .models import FocusSession
 import redis.asyncio as aioredis
