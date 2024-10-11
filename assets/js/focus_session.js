@@ -105,7 +105,7 @@ class FocusSessionManager {
 
       // Update current cycle information
       const currentCycleElement = document.getElementById('current-cycle');
-      if ( currentCycleElement ) {
+      if (currentCycleElement) {
         currentCycleElement.textContent = `Current Cycle: ${timerDisplayData.current_cycle.type} - ${this.formatTime(timerDisplayData.current_cycle.duration_seconds)}`;
       }
       // Update focus cycles list
@@ -245,9 +245,9 @@ class FocusSessionManager {
         const userType = follower.user_type;
         const coloured_username = follower.coloured_username;
         if (userType == "guest") {
-          guest_users.push({username: username, joined_at: joinedDate, coloured_username: coloured_username});
+          guest_users.push({ username: username, joined_at: joinedDate, coloured_username: coloured_username });
         } else {
-          authenticated_users.push({username: username, joined_at: joinedDate, coloured_username: coloured_username});
+          authenticated_users.push({ username: username, joined_at: joinedDate, coloured_username: coloured_username });
         }
       });
 
@@ -264,12 +264,9 @@ class FocusSessionManager {
 
   setOneSignalTag(sessionId) {
     if (typeof OneSignal !== 'undefined') {
-      OneSignal.push(function() {
-        OneSignal.sendTag("session_id", sessionId).then(function(tagsSent) {
-          console.log(`OneSignal tag set for session: ${sessionId}`, tagsSent);
-        }).catch(function(error) {
-          console.error("Error setting OneSignal tag:", error);
-        });
+      OneSignal.push(function () {
+        OneSignal.User.addTag("session_id", sessionId);
+        console.log(`OneSignal tag set for session: ${sessionId}`);
       });
     } else {
       console.error("OneSignal is not defined");
