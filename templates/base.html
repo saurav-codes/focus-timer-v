@@ -37,13 +37,14 @@
     <body class="bg-gray-100 min-h-screen flex flex-col">
         <header class="bg-blue-600 text-white p-4">
             <nav class="container mx-auto flex justify-between items-center">
-                <a href="{% url 'realtime_timer:homepage-view' %}"
-                   class="text-2xl font-bold">Focus Timer</a>
+                <a href="{% url 'realtime_timer:landing-page' %}" class="text-2xl font-bold">Focus Timer</a>
                 <ul class="flex space-x-4">
                     {% if user.is_authenticated %}
                         <li>
-                            <a href="{% url 'realtime_timer:main-session-view' %}"
-                               class="hover:underline">Session</a>
+                            <a href="{% url 'realtime_timer:homepage-view' %}" class="hover:underline">Dashboard</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'realtime_timer:main-session-view' %}" class="hover:underline">Session</a>
                         </li>
                         <li>
                             <a class="hover:underline">{{ user.username }}</a>
@@ -56,7 +57,7 @@
                             <a href="{% url 'account_login' %}"  class="hover:underline">Login</a>
                         </li>
                         <li>
-                            <a class="hover:underline">Sign Up</a>
+                            <a href="{% url 'account_signup' %}" class="hover:underline">Sign Up</a>
                         </li>
                     {% endif %}
                 </ul>

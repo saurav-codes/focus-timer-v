@@ -140,3 +140,7 @@ class SessionDetailView(View):
 #                 f'<li hx-target="this" hx-swap="outerHTML" id="task-{task.pk}">{task.description} <button hx-post="/task/{task.pk}/toggle/">Toggle</button></li>'
 #             )
 #         return HttpResponse("Unauthorized", status=403)
+
+
+class LandingPageView(TemplateView):
+    template_name = "realtime_timer/landing_page.html"
