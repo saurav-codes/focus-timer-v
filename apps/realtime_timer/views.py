@@ -25,7 +25,7 @@ class HomepageView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
-        context_data["user_sessions"] = FocusSession.objects.all()[:10]
+        context_data["user_sessions"] = FocusSession.objects.filter(owner=self.request.user)[:10]
         logger.info(
             f"HomepageView: Retrieved user sessions for homepage by user: {self.request.user.username}",  # type: ignore
             extra={"request": self.request},
