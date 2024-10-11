@@ -146,6 +146,7 @@ input[type="number"] {
     </div>
 
     <div class="space-y-4 mb-6">
+        {% if focus_session_form.technique.value == "Camel" %}
         <div class="checkbox-wrapper">
             {{ focus_session_form.distribute_extra_time_to_long_cycles }}
             <label for="{{ focus_session_form.distribute_extra_time_to_long_cycles.id_for_label }}" class="text-lg text-gray-200">Distribute extra time to long cycles</label>
@@ -157,7 +158,8 @@ input[type="number"] {
         <div class="checkbox-wrapper">
             {{ focus_session_form.distribute_extra_time_to_last_25_5_25_5_cycles }}
             <label for="{{ focus_session_form.distribute_extra_time_to_last_25_5_25_5_cycles.id_for_label }}" class="text-lg text-gray-200">Distribute extra time to last 25/5/25/5 cycles</label>
-        </div>
+            </div>
+        {% endif %}
     </div>
 
     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out">

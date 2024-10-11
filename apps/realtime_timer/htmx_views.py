@@ -30,7 +30,6 @@ def temporary_focus_cycles_generator_view(request):
             distribute_extra_time_to_last_25_5_25_5_cycles=form.cleaned_data[
                 "distribute_extra_time_to_last_25_5_25_5_cycles"
             ],
-            user=request.user,
         )
         return render(
             request,

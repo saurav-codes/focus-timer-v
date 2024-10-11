@@ -159,7 +159,6 @@ def generate_camel_focus_cycles(
                 total_time,
             ],
             0,
-            total_time,
         )
 
     cycles = []
@@ -202,8 +201,7 @@ def generate_camel_focus_cycles(
                     # because the rules inside the function are not met for the remaining time
                     distribution_functions.remove(distributing_function)
 
-    total_cycles_duration = sum(cycles)
-    return cycles, remaining_time, total_cycles_duration
+    return cycles, remaining_time
 
 
 def _convert_cycles_list_to_dict(cycles):
@@ -234,48 +232,96 @@ def _convert_cycles_list_to_dict(cycles):
     return cycles_dict
 
 
+def generate_pomodoro_cycles(total_time):
+    cycles = []
+    while total_time >= 30:
+        cycles.extend([25, 5])
+        total_time -= 30
+    return cycles, total_time
+
+
+def generate_52_17_cycles(total_time):
+    cycles = []
+    while total_time >= 69:
+        cycles.extend([52, 17])
+        total_time -= 69
+    return cycles, total_time
+
+
+def generate_90_minute_cycles(total_time):
+    cycles = []
+    while total_time >= 100:
+        cycles.extend([90, 10])
+        total_time -= 100
+    return cycles, total_time
+
+
+def generate_2_hour_cycles(total_time):
+    cycles = []
+    while total_time >= 130:
+        cycles.extend([120, 10])
+        total_time -= 130
+    return cycles, total_time
+
+
+def generate_flowtime_cycles(total_time):
+    cycles = []
+    remaining_time = total_time
+    focus_duration = 120  # Start with 2-hour focus periods
+    break_duration = 30  # 30-minute breaks
+
+    while remaining_time >= (focus_duration + break_duration):
+        cycles.extend([focus_duration, break_duration])
+        remaining_time -= focus_duration + break_duration
+
+    # If there's time left for at least a 25-minute focus period, add it
+    if remaining_time >= 25:
+        cycles.append(remaining_time)
+        remaining_time -= remaining_time
+
+    return cycles, remaining_time
+
+
 def generate_focus_cycle_data_based_on_technique_and_duration(
     technique: str,
     total_time: int,
     distribute_extra_time_to_long_cycles: bool,
     distribute_extra_time_to_short_cycles: bool,
     distribute_extra_time_to_last_25_5_25_5_cycles: bool,
-    user,
 ):
-    """
-    Generate sessions based on the technique and duration
-    sample output:
-        {
-            "total_cycles": 4,
-            "cycles": [
-                {"order": 1, "type": "FOCUS", "duration": 90},
-                {"order": 2, "type": "BREAK", "duration": 10},
-                {"order": 3, "type": "FOCUS", "duration": 25},
-                {"order": 4, "type": "BREAK", "duration": 5}
-            ],
-            "exact_time_after_finishing_all_cycles": "12:00 PM",
-            "extra_time_left": 0,
-            "total_minutes_distributed": 0,
-        }
-    """
     if technique == FocusSession.CAMEL_TECHNIQUE:
-        focus_cycles, remaining_time, total_cycles_duration = generate_camel_focus_cycles(
+        focus_cycles, remaining_time = generate_camel_focus_cycles(
             total_time,
             distribute_extra_time_to_long_cycles,
             distribute_extra_time_to_short_cycles,
             distribute_extra_time_to_last_25_5_25_5_cycles,
         )
-        focus_cycles = _convert_cycles_list_to_dict(focus_cycles)
-        exact_time_after_finishing_all_cycles = datetime.datetime.now(tz=UTC) + datetime.timedelta(
-            minutes=total_cycles_duration
-        )
-        return {
-            "total_cycles": len(focus_cycles),
-            "cycles": focus_cycles,
-            "exact_time_after_finishing_all_cycles": exact_time_after_finishing_all_cycles.isoformat(),
-            "extra_time_left": remaining_time,
-            "total_minutes_distributed": total_cycles_duration,
-        }
-
+    elif technique == FocusSession.POMODORO_TECHNIQUE:
+        focus_cycles, remaining_time = generate_pomodoro_cycles(total_time)
+    elif technique == FocusSession.FOCUS_52_17_TECHNIQUE:
+        focus_cycles, remaining_time = generate_52_17_cycles(total_time)
+    elif technique == FocusSession.FOCUS_90_TECHNIQUE:
+        focus_cycles, remaining_time = generate_90_minute_cycles(total_time)
+    elif technique == FocusSession.FOCUS_2_HOURS_TECHNIQUE:
+        focus_cycles, remaining_time = generate_2_hour_cycles(total_time)
+    elif technique == FocusSession.FLOWTIME_TECHNIQUE:
+        focus_cycles, remaining_time = generate_flowtime_cycles(total_time)
+    elif technique == FocusSession.CUSTOM_TECHNIQUE:
+        focus_cycles = [total_time]
+        remaining_time = 0
     else:
         raise ValueError(f"Technique {technique} not supported")
+
+    total_cycles_duration = sum(focus_cycles)
+    focus_cycles = _convert_cycles_list_to_dict(focus_cycles)
+    exact_time_after_finishing_all_cycles = datetime.datetime.now(tz=UTC) + datetime.timedelta(
+        minutes=total_cycles_duration
+    )
+
+    return {
+        "total_cycles": len(focus_cycles),
+        "cycles": focus_cycles,
+        "exact_time_after_finishing_all_cycles": exact_time_after_finishing_all_cycles.isoformat(),
+        "extra_time_left": remaining_time,
+        "total_minutes_distributed": total_cycles_duration,
+    }
