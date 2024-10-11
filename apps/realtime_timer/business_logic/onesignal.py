@@ -15,6 +15,7 @@ async def send_onesignal_notification(session_id, message):
         "filters": [{"field": "tag", "key": "session_id", "relation": "=", "value": str(session_id)}],
     }
 
+    logger.info(f"🔔 Sending notification to session {session_id} with message: {message}")
     async with aiohttp.ClientSession() as session:
         async with session.post(
             "https://onesignal.com/api/v1/notifications", json=payload, headers=headers

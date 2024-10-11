@@ -122,7 +122,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
             # Send notification when cycle changes
             cycle_type = session.current_cycle.cycle_type.lower()
             message = f"Time's up! Your {cycle_type} session has ended."
+            logger.info("cycle is completed. so sending notification")
             await send_onesignal_notification(self.session_id, message)
+        else:
+            logger.info("cycle is not completed. so not sending notification")
 
         # now we have new cycle so we need to schedule the next cycle change
         await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
