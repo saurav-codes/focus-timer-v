@@ -164,12 +164,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
 
     async def will_finish_at_update(self, data):
         session = await selectors.get_session_by_id_async(self.session_id)
-        will_finish_at_timestamp = await selectors.get_session_will_finish_at_async(session=session)
-        await self.send(
-            text_data=json.dumps(
-                {"will_finish_at_timestamp": will_finish_at_timestamp, "type": "will_finish_at_update"}
-            )
-        )
+        will_finish_at = await selectors.get_session_will_finish_at_async(session=session)
+        await self.send(text_data=json.dumps({"will_finish_at": will_finish_at, "type": "will_finish_at_update"}))
 
     async def update_session_followers_list_to_all_clients(self):
         session = await selectors.get_session_by_id_async(self.session_id)

@@ -13,7 +13,9 @@ class FocusSessionManager {
     this.timerInterval = null;
     this.originalTitle = document.title;
     this.lastSyncTime = Date.now();
+    this.willFinishAt = document.getElementById('will-finish-at')?.dataset.willFinishAt;
     console.log(`FocusSessionManager initialized for session: ${sessionId}, user: ${username}`);
+    this.updateFinishTime();
   }
 
   // *****************************************
@@ -33,7 +35,8 @@ class FocusSessionManager {
       this.update_session_followers_list(data);
     } else if (data.type === "will_finish_at_update") {
       console.log("Received will finish at update from server", data);
-      this.update_will_finish_at_display(data);
+      this.willFinishAt = data.will_finish_at;
+      this.updateFinishTime();
     } else if (data.type === "onesignal_tag") {
       console.log("Received OneSignal tag update", data);
       this.setOneSignalTag(data.session_id);
@@ -273,6 +276,28 @@ class FocusSessionManager {
     }
   }
 
+  formatLocalDateTime(date) {
+    return new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'medium'
+    }).format(date);
+  }
+
+  updateFinishTime() {
+    if (this.willFinishAt) {
+      const finishTime = new Date(this.willFinishAt);
+      document.getElementById('finish-time').textContent = this.formatLocalDateTime(finishTime);
+    }
+  }
+
+  updateCycles(cycles) {
+    let totalDuration = cycles.reduce((sum, cycle) => sum + cycle.duration, 0);
+    const currentTime = new Date();
+    const finishTime = new Date(currentTime.getTime() + totalDuration * 1000);
+    this.willFinishAt = finishTime.toISOString();
+    this.updateFinishTime();
+  }
+
 }
 
 function _populate_session_followers_list(users, followersContainer) {
@@ -310,5 +335,17 @@ document.addEventListener("DOMContentLoaded", (event) => {
       }
     }
   });
+
+  const focusCyclesTable = document.getElementById('focus-cycles-list');
+  if (focusCyclesTable) {
+    focusCyclesTable.addEventListener('change', function(e) {
+      if (e.target.name === 'focus_cycle_duration') {
+        const cycles = Array.from(focusCyclesTable.children).map(cycle => ({
+          duration: parseInt(cycle.querySelector('input[name="focus_cycle_duration"]').value, 10) * 60 // Convert to seconds
+        }));
+        focusSessionManager.updateCycles(cycles);
+      }
+    });
+  }
 
 });

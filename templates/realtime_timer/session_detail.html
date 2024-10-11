@@ -82,8 +82,8 @@
       </div>
 
       {% if will_finish_at %}
-      <div id="will-finish-at" class="text-center text-gray-400">
-        Session will finish at: {{ will_finish_at }}
+      <div id="will-finish-at" data-will-finish-at="{{ will_finish_at }}">
+        Session will finish at: <span id="finish-time"></span>
       </div>
       {% endif %}
 

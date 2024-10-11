@@ -234,6 +234,31 @@ input[type="number"] {
         crossorigin="anonymous"
         referrerpolicy="no-referrer"></script>
 <script defer>
+    function updateFinishTime() {
+        const focusCyclesTable = document.getElementById('focus_cycles_table');
+        if (!focusCyclesTable) return;
+
+        const cycles = Array.from(focusCyclesTable.children).map(cycle => ({
+            duration: parseInt(cycle.querySelector('input[name="focus_cycle_duration"]').value, 10)
+        }));
+
+        const totalDuration = cycles.reduce((sum, cycle) => sum + cycle.duration, 0);
+        const currentTime = new Date();
+        const finishTime = new Date(currentTime.getTime() + totalDuration * 60 * 1000);
+
+        const exactFinishTimeElement = document.getElementById('exact-finish-time');
+        if (exactFinishTimeElement) {
+            exactFinishTimeElement.textContent = formatLocalDateTime(finishTime.toISOString());
+            exactFinishTimeElement.setAttribute('data-iso-time', finishTime.toISOString());
+        }
+
+        // Update total minutes
+        const totalMinutesElement = document.querySelector('p.mb-2.text-gray-300 span.font-semibold');
+        if (totalMinutesElement) {
+            totalMinutesElement.textContent = totalDuration;
+        }
+    }
+
     document.body.addEventListener('htmx:afterSettle', function (event) {
         const focus_cycles_table = document.getElementById('focus_cycles_table');
 
@@ -243,6 +268,9 @@ input[type="number"] {
                 animation: 150,
                 ghostClass: 'blue-background-class',
                 handle: '.handle',
+                onEnd: function() {
+                    updateFinishTime();
+                }
             });
 
             // Delete cycle functionality
@@ -252,6 +280,7 @@ input[type="number"] {
                     e.target.closest('.cycle-item').remove();
                     console.log("cycle deleted");
                     updateTotalCycles();
+                    updateFinishTime();
                 }
             });
 
@@ -262,13 +291,21 @@ input[type="number"] {
                 console.log("total cycles updated to: ", totalCycles);
             }
 
-            // Update total cycles after adding a new cycle
+            // Update total cycles and finish time after adding a new cycle
             if (event.detail.target.classList.contains('cycle-item')) {
                 // this event is triggered when a new cycle is added to the table
                 // using htmx
                 console.log("new cycle added");
                 updateTotalCycles();
+                updateFinishTime();
             }
+
+            // Add event listeners for cycle modifications
+            focus_cycles_table.addEventListener('change', function(e) {
+                if (e.target.name === 'focus_cycle_duration') {
+                    updateFinishTime();
+                }
+            });
         }
 
         // display the exact finish time with the local timezone
@@ -283,12 +320,9 @@ input[type="number"] {
 
     function formatLocalDateTime(isoString) {
         const date = new Date(isoString);
-        const datetime = new Intl.DateTimeFormat(undefined, {
+        return new Intl.DateTimeFormat(undefined, {
             dateStyle: 'medium',
             timeStyle: 'medium'
         }).format(date);
-        const timezone = new Date().toString().match(/\(([^)]+)\)$/)[1];
-        return `${datetime} ${timezone}`;
     }
-
 </script>
