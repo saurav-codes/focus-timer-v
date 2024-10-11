@@ -1,81 +1,100 @@
 {% extends "base.html" %}
 {% load static %}
+
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/session_detail.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  .minecraft-btn {
+    image-rendering: pixelated;
+    border: 2px solid #000;
+    box-shadow: inset -2px -4px #0006, inset 2px 2px #FFF7;
+  }
+  .minecraft-btn:hover {
+    box-shadow: inset -2px -4px #0004, inset 2px 2px #FFF5;
+  }
+</style>
 {% endblock extra_head %}
 
 {% block content %}
-  <div class="focus-session-container" id="focus-session-container">
-    <h1 class="session-title">Focus Session</h1>
-    <div id="session-followers-container"></div>
-    <div id="session-id"
-         data-session-id="{{ focus_session.session_id }}"
-         class="hidden">
-    </div>
-    {% if username %}
-    <div id="username"
-         data-username="{{ username }}"
-         class="hidden">
-    </div>
-    {% else %}
-    <!-- Username required Modal Background -->
-    <div id="usernameModal" class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 backdrop-blur-lg z-50">
-      <!-- Modal Box -->
-      <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-          <h2 class="text-xl font-semibold mb-4 text-center">
-            Enter Your Username or <a href="{% url 'account_login' %}?next={{ request.path }}" class="text-blue-500">Login</a> to join the session
+<div class="min-h-screen bg-gray-900 text-white font-['VT323'] text-lg">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <div id="focus-session-container" class="bg-gray-800 border-4 border-gray-700 p-6 rounded-lg shadow-lg">
+      <h1 class="text-4xl font-bold mb-6 text-center text-yellow-400">Focus Session</h1>
+
+      <div id="session-followers-container" class="mb-4 text-green-400"></div>
+
+      <div id="session-id" data-session-id="{{ focus_session.session_id }}" class="hidden"></div>
+
+      {% if username %}
+      <div id="username" data-username="{{ username }}" class="hidden"></div>
+      {% else %}
+      <!-- Username required Modal -->
+      <div id="usernameModal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm z-50">
+        <div class="bg-gray-800 border-4 border-gray-700 p-6 rounded-lg shadow-lg max-w-sm w-full">
+          <h2 class="text-2xl font-bold mb-4 text-center text-yellow-400">
+            Enter Your Username or <a href="{% url 'account_login' %}?next={{ request.path }}" class="text-blue-400 hover:underline">Login</a>
           </h2>
-          <!-- Form -->
           <form id="usernameForm" class="space-y-4">
             {% csrf_token %}
-              <div>
-                  <label for="username" class="block text-sm font-regular text-gray-700">
-                    Your Name will be visible to others who are following this session
-                  </label>
-                  <input type="text" id="username" name="username"
-                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required>
-              </div>
-              <button type="submit"
-                      class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      hx-post="{% url 'realtime_timer:session-detail-view' focus_session.session_id %}"
-                      hx-target="#usernameModalError"
-                      hx-swap="innerHTML transition:true"
-                      hx-trigger="click"
-                      hx-include="#usernameForm">
-                Join Session
-              </button>
-              <span id="usernameModalError" class="text-red-500"></span>
+            <div>
+              <label for="username" class="block text-sm text-gray-300 mb-2">
+                Your Name will be visible to others who are following this session
+              </label>
+              <input type="text" id="username" name="username"
+                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     required>
+            </div>
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 minecraft-btn"
+                    hx-post="{% url 'realtime_timer:session-detail-view' focus_session.session_id %}"
+                    hx-target="#usernameModalError"
+                    hx-swap="innerHTML transition:true"
+                    hx-trigger="click"
+                    hx-include="#usernameForm">
+              Join Session
+            </button>
+            <span id="usernameModalError" class="text-red-500"></span>
           </form>
+        </div>
       </div>
+      {% endif %}
+
+      <div class="timer-display text-center mb-8">
+        <div id="remaining-time" class="text-6xl font-bold text-blue-400 mb-2"></div>
+        <div id="current-cycle" class="text-2xl text-gray-300"></div>
+      </div>
+
+      {% if is_session_owner %}
+      <div class="timer-controls flex justify-center space-x-4 mb-8">
+        <button onclick="focusSessionManager.toggleTimer()" class="minecraft-btn bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+          <i id="timer-toggle-icon"></i>
+          <span id="timer-toggle-text"></span>
+        </button>
+        <button onclick="focusSessionManager.stopTimer()" class="minecraft-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+          <i class="fa-regular fa-circle-stop"></i> Stop
+        </button>
+      </div>
+      {% endif %}
+
+      <div id="focus-cycles-list" class="bg-gray-700 border-2 border-gray-600 rounded-lg p-4 mb-6">
+        <h3 class="text-2xl font-bold mb-4 text-yellow-400">Focus Cycles</h3>
+        <!-- Cycles will be populated here by JavaScript -->
+      </div>
+
+      {% if will_finish_at %}
+      <div id="will-finish-at" class="text-center text-gray-400">
+        Session will finish at: {{ will_finish_at }}
+      </div>
+      {% endif %}
+
+      <div id="debug-mode" data-debug="{{ debug|lower }}" class="hidden"></div>
     </div>
-    {% endif %}
-    <div class="timer-display">
-      <div id="remaining-time" class="countdown"></div>
-      <div id="current-cycle" class="current-cycle"></div>
-    </div>
-    {% if is_session_owner %}
-    <div class="timer-controls">
-      <button onclick="focusSessionManager.toggleTimer()" class="btn btn-primary">
-        <i id="timer-toggle-icon"></i>
-        <span id="timer-toggle-text"></span>
-      </button>
-      <button onclick="focusSessionManager.stopTimer()" class="btn btn-danger">
-        <i class="fa-regular fa-circle-stop"></i> Stop
-      </button>
-    </div>
-    {% endif %}
-    <div id="focus-cycles-list" class="cycles-list"></div>
-    {% if will_finish_at %}
-    <div id="will-finish-at">
-      Session will finish at: {{ will_finish_at }}
-    </div>
-    {% endif %}
-    <div id="debug-mode" data-debug="{{ debug|lower }}"></div>
   </div>
-  <script src="{% static 'js/hack_timer.js' %}" defer></script>
-  <script src="{% static 'js/hack_timer_worker.js' %}" defer></script>
-  <script src="{% static 'js/focus_session.js' %}" defer></script>
+</div>
+
+<script src="{% static 'js/hack_timer.js' %}" defer></script>
+<script src="{% static 'js/hack_timer_worker.js' %}" defer></script>
+<script src="{% static 'js/focus_session.js' %}" defer></script>
 {% endblock content %}
 
 {% block extra_js %}

@@ -1,22 +1,27 @@
-<div class="cycle-item">
-    <span class="handle">☰</span>
-    <select name="focus_cycle_type">
-        <option value="FOCUS">Focus</option>
-        <option value="BREAK">Break</option>
-    </select>
-    <input type="number"
-           name="focus_cycle_duration"
-           value="25"
-           min="0"
-           max="600">
-    <span>Minutes</span>
-    <div class="cycle-controls">
+<div class="cycle-item bg-gray-700 p-4 rounded-md flex flex-wrap items-center justify-between">
+    <div class="flex items-center mb-2 md:mb-0">
+        <span class="handle mr-2">☰</span>
+        <select name="focus_cycle_type" class="bg-gray-600 border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2 text-gray-200">
+            <option value="FOCUS">Focus</option>
+            <option value="BREAK">Break</option>
+        </select>
+        <input type="number"
+               name="focus_cycle_duration"
+               value="25"
+               min="0"
+               max="600"
+               class="bg-gray-600 border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-20 mr-2 text-gray-200">
+        <span class="mr-4 text-gray-200">Minutes</span>
+    </div>
+    <div class="cycle-controls flex">
         <button title="Add Cycle below this one"
                 type="button"
-                class="add-cycle"
+                class="add-cycle bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition duration-300 ease-in-out"
                 hx-get="{% url 'realtime_timer:add-cycle-to-cycle-table-view' %}"
                 hx-target="closest .cycle-item"
-                hx-swap="afterend">+</button>
-        <button title="Delete this Cycle" type="button" class="delete-cycle">-</button>
+                hx-swap="afterend transition:true">+</button>
+        <button title="Delete this Cycle"
+                type="button"
+                class="delete-cycle bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition duration-300 ease-in-out ml-2">-</button>
     </div>
 </div>

@@ -1,28 +1,59 @@
 {% extends "base.html" %}
+{% load humanize %}
 
 {% block content %}
-<div class="text-center">
-    <h1 class="text-4xl font-bold mb-4">Welcome to Focus Timer</h1>
-    <p class="mb-8">Stay productive with our community-driven focus sessions.</p>
-    {% if user.is_authenticated %}
-        <a href="{% url 'realtime_timer:main-session-view' %}"
-           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-           Session
-        </a>
-    {% else %}
-        <a  class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mr-4">
-            Log In
-        </a>
-        <a  class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Sign Up
-        </a>
-    {% endif %}
-    <hr>
-    {% for session in user_sessions %}
-    <div class="flex flex-col">
-        <a href="{{ session.get_absolute_url }}">{{ session.label }}</a>
-        <p>{{ session.created_at|date:"M j, Y" }}</p>
+<div class="min-h-screen bg-gray-900 text-gray-100 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 text-center">Focus Timer Dashboard</h1>
+        {% if user_sessions %}
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-6">Your Sessions</h2>
+            <div class="grid gap-6 md:grid-cols-2">
+                {% for session in user_sessions %}
+                <div class="bg-gray-800 rounded-lg p-6 shadow-lg transition duration-300 ease-in-out hover:bg-gray-700">
+                    <div class="flex justify-between items-start mb-4">
+                        <a href="{{ session.get_absolute_url }}" class="text-xl font-semibold hover:text-blue-400 truncate max-w-[80%]">{{ session.label }}</a>
+                        <span class="text-sm text-gray-400">{{ session.created_at|date:"M j, Y" }}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-blue-400 mr-2"></i>
+                            <span>{{ session.focus_cycles.count }} cycles</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-hourglass-half text-green-400 mr-2"></i>
+                            <span>{{ session.total_focus_completed }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            {% if session.timer_state == "running" %}
+                                <i class="fas fa-play text-green-400 mr-2"></i>
+                            {% elif session.timer_state == "paused" %}
+                                <i class="fas fa-pause text-yellow-400 mr-2"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle text-blue-400 mr-2"></i>
+                            {% endif %}
+                            <span class="capitalize">{{ session.timer_state }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                            <span>{{ session.technique }}</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ session.get_absolute_url }}" class="text-blue-400 hover:text-blue-300 text-sm">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center mt-12">
+            <p class="text-xl mb-4">You haven't created any focus sessions yet.</p>
+            <a href="{% url 'realtime_timer:main-session-view' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                Create Your First Session
+            </a>
+        </div>
+        {% endif %}
     </div>
-    {% endfor %}
 </div>
 {% endblock content %}

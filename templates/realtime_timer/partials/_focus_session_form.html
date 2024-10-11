@@ -2,91 +2,222 @@
     .handle {
         cursor: move;
         padding: 5px;
-        background-color: #f0f0f0;
+        background-color: #4a5568;
+        color: #ffffff;
         margin-right: 10px;
+        border-radius: 4px;
     }
     .add-cycle, .delete-cycle {
-        background-color: rgba(1, 1, 1, 0.1);
+        background-color: rgba(255, 255, 255, 0.1);
         border: none;
         padding: 5px 10px;
         margin-left: 5px;
         cursor: pointer;
         transition: background-color 0.3s ease;
-        opacity: 0.4;
+        opacity: 0.8;
     }
     .add-cycle:hover, .delete-cycle:hover {
         opacity: 1;
     }
     .add-cycle:hover {
-        background-color: green;
-        color: white;
+        background-color: #48bb78;
     }
     .delete-cycle:hover {
-        background-color: red;
-        color: white;
+        background-color: #f56565;
     }
     .cycle-item {
         display: flex;
         align-items: center;
         justify-content: flex-start;
     }
+    input[type="text"],
+    input[type="number"],
+    select {
+        background-color: #2d3748;
+        color: #ffffff;
+        border: 1px solid #4a5568;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+        border-color: #63b3ed;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.5);
+    }
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+    }
+    .checkbox-wrapper input[type="checkbox"] {
+        width: 1.2em;
+        height: 1.2em;
+        margin-right: 0.5em;
+    }
+    input[type="number"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input[type="number"]:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+select, input[type="number"] {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+    background-color: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    appearance: none; /* Removes default styling */
+}
+
+select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+}
+
+select:focus, input[type="number"]:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
 </style>
+
 <form hx-post="{% url 'realtime_timer:temporary-focus-cycles-generator-view' %}"
       hx-swap="outerHTML transition:true"
-      hx-target="this">
+      hx-target="this"
+      class="space-y-6 bg-gray-900 text-gray-100 p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
     {% if form.errors %}
         {% for field in form %}
-            {% for error in field.errors %}<div>{{ error|escape }}</div>{% endfor %}
+            {% for error in field.errors %}<div class="text-red-400 text-sm mb-2">{{ error|escape }}</div>{% endfor %}
         {% endfor %}
     {% endif %}
     {% csrf_token %}
-    {{ focus_session_form.as_p }}
-    <button class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"
-            type="submit">Generate Focus Cycles</button>
-    {% if generated_focus_cycle_data.total_cycles %}
-        <h1>
-            Total Cycles:
-            <span id="total_cycles">{{ generated_focus_cycle_data.total_cycles }}</span>
-        </h1>
-        <p>
-            Total minutes: {{ generated_focus_cycle_data.total_minutes_distributed }}
-        </p>
-        {% if generated_focus_cycle_data.extra_time_left %}
-        <p>
-            Extra time left: {{ generated_focus_cycle_data.extra_time_left }} minutes
-        </p>
-        {% endif %}
-        <div id="focus_cycles_table">
-            {% for cycle in generated_focus_cycle_data.cycles %}
-                <div class="cycle-item">
-                    <span class="handle">☰</span>
-                    <select name="focus_cycle_type">
-                        <option value="FOCUS" {% if cycle.type == "FOCUS" %}selected{% endif %}>Focus</option>
-                        <option value="BREAK" {% if cycle.type == "BREAK" %}selected{% endif %}>Break</option>
-                    </select>
-                    <input type="number"
-                           max="600"
-                           min="0"
-                           name="focus_cycle_duration"
-                           value="{{ cycle.duration }}">
-                    <span>Minutes</span>
-                    <div class="cycle-controls">
-                        <button title="Add Cycle below this one"
-                                type="button"
-                                class="add-cycle"
-                                hx-get="{% url 'realtime_timer:add-cycle-to-cycle-table-view' %}"
-                                hx-target="closest .cycle-item"
-                                hx-swap="afterend transition:true">+</button>
-                        <button title="Delete this Cycle" type="button" class="delete-cycle">-</button>
-                    </div>
-                </div>
-            {% endfor %}
+    <div class="mb-6">
+        <label for="{{ focus_session_form.technique.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">Technique:</label>
+        {{ focus_session_form.technique }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+            <label for="{{ focus_session_form.duration_hours.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">Duration hours:</label>
+            {{ focus_session_form.duration_hours }}
+            <p class="text-sm text-gray-400 mt-1">Set the number of hours for your focus session.</p>
         </div>
-        <p>
-            Exact time after finishing all cycles:
-            <span id="exact-finish-time" data-iso-time="{{ generated_focus_cycle_data.exact_time_after_finishing_all_cycles }}"></span>
-        </p>
-        <button hx-post="{% url 'realtime_timer:focus-cycles-and-session-create-view' %}">Start Focus Session</button>
+        <div>
+            <label for="{{ focus_session_form.duration_minutes.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">Duration minutes:</label>
+            {{ focus_session_form.duration_minutes }}
+            <p class="text-sm text-gray-400 mt-1">Set the number of minutes for your focus session.</p>
+        </div>
+    </div>
+
+    <div class="space-y-4 mb-6">
+        <div class="checkbox-wrapper">
+            {{ focus_session_form.distribute_extra_time_to_long_cycles }}
+            <label for="{{ focus_session_form.distribute_extra_time_to_long_cycles.id_for_label }}" class="text-lg text-gray-200">Distribute extra time to long cycles</label>
+        </div>
+        <div class="checkbox-wrapper">
+            {{ focus_session_form.distribute_extra_time_to_short_cycles }}
+            <label for="{{ focus_session_form.distribute_extra_time_to_short_cycles.id_for_label }}" class="text-lg text-gray-200">Distribute extra time to short cycles</label>
+        </div>
+        <div class="checkbox-wrapper">
+            {{ focus_session_form.distribute_extra_time_to_last_25_5_25_5_cycles }}
+            <label for="{{ focus_session_form.distribute_extra_time_to_last_25_5_25_5_cycles.id_for_label }}" class="text-lg text-gray-200">Distribute extra time to last 25/5/25/5 cycles</label>
+        </div>
+    </div>
+
+    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out">
+        Generate Focus Cycles
+    </button>
+
+    {% if generated_focus_cycle_data.total_cycles %}
+        <div class="mt-8 bg-gray-800 p-6 rounded-lg">
+            <h1 class="text-2xl font-bold mb-4 text-gray-100">
+                Total Cycles:
+                <span id="total_cycles" class="text-blue-400">{{ generated_focus_cycle_data.total_cycles }}</span>
+            </h1>
+            <p class="mb-2 text-gray-300">
+                Total minutes: <span class="font-semibold">{{ generated_focus_cycle_data.total_minutes_distributed }}</span>
+            </p>
+            {% if generated_focus_cycle_data.extra_time_left %}
+            <p class="mb-4 text-gray-300">
+                Extra time left: <span class="font-semibold">{{ generated_focus_cycle_data.extra_time_left }}</span> minutes
+            </p>
+            {% endif %}
+            <div id="focus_cycles_table" class="space-y-4 mt-6">
+                {% for cycle in generated_focus_cycle_data.cycles %}
+                    <div class="cycle-item bg-gray-700 p-4 rounded-md flex flex-wrap items-center justify-between">
+                        <div class="flex items-center mb-2 md:mb-0">
+                            <span class="handle mr-2">☰</span>
+                            <select name="focus_cycle_type" class="bg-gray-600 border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 mr-2 text-gray-200">
+                                <option value="FOCUS" {% if cycle.type == "FOCUS" %}selected{% endif %}>Focus</option>
+                                <option value="BREAK" {% if cycle.type == "BREAK" %}selected{% endif %}>Break</option>
+                            </select>
+                            <input type="number"
+                                   max="600"
+                                   min="0"
+                                   name="focus_cycle_duration"
+                                   value="{{ cycle.duration }}"
+                                   class="bg-gray-600 border border-gray-500 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 w-20 mr-2 text-gray-200">
+                            <span class="mr-4 text-gray-200">Minutes</span>
+                        </div>
+                        <div class="cycle-controls flex">
+                            <button title="Add Cycle below this one"
+                                    type="button"
+                                    class="add-cycle bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition duration-300 ease-in-out"
+                                    hx-get="{% url 'realtime_timer:add-cycle-to-cycle-table-view' %}"
+                                    hx-target="closest .cycle-item"
+                                    hx-swap="afterend transition:true">+</button>
+                            <button title="Delete this Cycle"
+                                    type="button"
+                                    class="delete-cycle bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition duration-300 ease-in-out ml-2">-</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <p class="mt-6 text-gray-300">
+                Exact time after finishing all cycles:
+                <span id="exact-finish-time" data-iso-time="{{ generated_focus_cycle_data.exact_time_after_finishing_all_cycles }}" class="font-semibold"></span>
+            </p>
+            <button hx-post="{% url 'realtime_timer:focus-cycles-and-session-create-view' %}"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out mt-6">
+                Start Focus Session
+            </button>
+        </div>
     {% endif %}
 </form>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"

@@ -1,42 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="bg-gradient-to-r from-blue-500 to-purple-600 min-h-screen">
+<div class="min-h-screen">
     <div class="container mx-auto px-4 py-16">
         <div class="text-center">
-            <h1 class="text-5xl font-bold text-white mb-4">Focus Timer</h1>
-            <p class="text-xl text-white mb-8">Boost your productivity with our cloud based timer</p>
+            <h1 class="text-5xl font-bold text-dark-100 mb-4 pixelated">Focus Timer</h1>
+            <p class="text-xl text-dark-200 mb-8 pixelated">Boost your productivity with our cloud based timer</p>
         </div>
 
         <div class="grid md:grid-cols-2 gap-12 items-center">
             <div class="space-y-6">
-                <div class="bg-white rounded-lg p-6 shadow-lg">
-                    <h2 class="text-2xl font-semibold mb-2">Customizable Techniques</h2>
-                    <p class="text-gray-600">Choose from various focus techniques like Camel, Pomodoro, 52/17, or create your own.</p>
+                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+                    <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Customizable Techniques</h2>
+                    <p class="text-dark-200 pixelated">Choose from various focus techniques like Camel, Pomodoro, 52/17, or create your own.</p>
                 </div>
-                <div class="bg-white rounded-lg p-6 shadow-lg">
-                    <h2 class="text-2xl font-semibold mb-2">Community Support</h2>
-                    <p class="text-gray-600">Join focus sessions with others and stay motivated together.</p>
+                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+                    <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Community Support</h2>
+                    <p class="text-dark-200 pixelated">Join focus sessions with others and stay motivated together.</p>
                 </div>
-                <div class="bg-white rounded-lg p-6 shadow-lg">
-                    <h2 class="text-2xl font-semibold mb-2">Real-time Updates</h2>
-                    <p class="text-gray-600">Track your progress and receive notifications to stay on schedule.</p>
+                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+                    <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Real-time Updates</h2>
+                    <p class="text-dark-200 pixelated">Track your progress and receive notifications to stay on schedule.</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg p-8 shadow-lg">
-                <h2 class="text-3xl font-bold mb-4">Get Started Now</h2>
-                <p class="text-gray-600 mb-6">Create your first focus session and experience the power of structured productivity.</p>
+            <div class="bg-dark-700 rounded-lg p-8 shadow-lg border-4 border-dark-600">
+                <h2 class="text-3xl font-bold mb-4 text-dark-100 pixelated">Get Started Now</h2>
+                <p class="text-dark-200 mb-6 pixelated">Create your first focus session and experience the power of structured productivity.</p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'realtime_timer:main-session-view' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full inline-block transition duration-300">
+                    <a href="{% url 'realtime_timer:main-session-view' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
                         Create Session
                     </a>
                 {% else %}
-                    <a href="{% url 'account_signup' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full inline-block transition duration-300">
+                    <a href="{% url 'account_signup' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
                         Sign Up
                     </a>
-                    <p class="mt-4 text-sm text-gray-500">
-                        Already have an account? <a href="{% url 'account_login' %}" class="text-blue-500 hover:underline">Log in</a>
+                    <p class="mt-4 text-sm text-dark-300 pixelated">
+                        Already have an account? <a href="{% url 'account_login' %}" class="text-dark-400 hover:underline">Log in</a>
                     </p>
                 {% endif %}
             </div>

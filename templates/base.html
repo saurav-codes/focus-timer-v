@@ -1,13 +1,23 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Focus Timer - A tool to help you stay focused and productive">
-        <meta name="keywords" content="focus, timer, productivity, pomodoro, time management">
+        <meta name="description" content="Focus Timer - A tool to help you stay focused and productive with customizable techniques like Pomodoro, 52/17 Method, and more.">
+        <meta name="keywords" content="focus timer, productivity, pomodoro, time management, 52/17 method, focus techniques">
+        <meta name="author" content="Saurav Sharma">
+        <meta name="robots" content="index, follow">
+        <meta property="og:title" content="Focus Timer - Boost Your Productivity">
+        <meta property="og:description" content="Enhance your focus and productivity with customizable timer techniques. Try Focus Timer today!">
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="https://tymr.online">
+        <meta property="og:image" content="{% static 'focus-timer-favicon.png' %}">
+        <link rel="shortcut icon" href="{% static 'focus-timer-favicon.png' %}" type="image/x-icon">
         <title>
-            {% block title %}Focus Timer{% endblock %}
+            {% block title %}Focus Timer - Boost Your Productivity{% endblock %}
         </title>
+        <link rel="apple-touch-icon" sizes="180x180" href="{% static 'focus-timer-favicon.png' %}">
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
                 defer></script>
         <script>
@@ -33,32 +43,55 @@
         {% block extra_head %}{% endblock %}
         <script src="https://beamanalytics.b-cdn.net/beam.min.js" data-token="4d8d10b5-436d-4483-b61d-392ee0f77a3d" async>
         </script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            dark: {
+                                100: '#d1d5db',
+                                200: '#9ca3af',
+                                300: '#6b7280',
+                                400: '#4b5563',
+                                500: '#374151',
+                                600: '#1f2937',
+                                700: '#111827',
+                                800: '#0d1117',
+                                900: '#030712',
+                            },
+                        },
+                        fontFamily: {
+                            'minecraft': ['Minecraft', 'monospace'],
+                        },
+                    },
+                },
+            }
+        </script>
+        <style>
+            @font-face {
+                font-family: 'Minecraft';
+                src: url('https://db.onlinewebfonts.com/t/6ab539c6fc2b21ff0b149b3d06d7f97c.woff2') format('woff2');
+            }
+            .pixelated {
+                image-rendering: pixelated;
+            }
+        </style>
     </head>
-    <body class="bg-gray-100 min-h-screen flex flex-col">
-        <header class="bg-blue-600 text-white p-4">
+    <body class="bg-dark-800 text-dark-100 min-h-screen flex flex-col font-minecraft transition-colors duration-300">
+        <header class="bg-dark-700 text-dark-100 p-4 border-b-4 border-dark-600">
             <nav class="container mx-auto flex justify-between items-center">
-                <a href="{% url 'realtime_timer:landing-page' %}" class="text-2xl font-bold">Focus Timer</a>
+                <a href="{% url 'realtime_timer:landing-page' %}" class="text-2xl font-bold pixelated">Focus Timer</a>
                 <ul class="flex space-x-4">
                     {% if user.is_authenticated %}
-                        <li>
-                            <a href="{% url 'realtime_timer:homepage-view' %}" class="hover:underline">Dashboard</a>
-                        </li>
-                        <li>
-                            <a href="{% url 'realtime_timer:main-session-view' %}" class="hover:underline">Session</a>
-                        </li>
-                        <li>
-                            <a class="hover:underline">{{ user.username }}</a>
-                        </li>
-                        <li>
-                            <a href="{% url 'account_logout' %}"  class="hover:underline">Logout</a>
-                        </li>
+                        <li><a href="{% url 'realtime_timer:homepage-view' %}" class="hover:text-dark-300 pixelated">Dashboard</a></li>
+                        <li><a href="{% url 'realtime_timer:main-session-view' %}" class="hover:text-dark-300 pixelated">Session</a></li>
+                        <li><a class="hover:text-dark-300 pixelated">{{ user.username }}</a></li>
+                        <li><a href="{% url 'account_logout' %}" class="hover:text-dark-300 pixelated">Logout</a></li>
                     {% else %}
-                        <li>
-                            <a href="{% url 'account_login' %}"  class="hover:underline">Login</a>
-                        </li>
-                        <li>
-                            <a href="{% url 'account_signup' %}" class="hover:underline">Sign Up</a>
-                        </li>
+                        <li><a href="{% url 'account_login' %}" class="hover:text-dark-300 pixelated">Login</a></li>
+                        <li><a href="{% url 'account_signup' %}" class="hover:text-dark-300 pixelated">Sign Up</a></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -67,8 +100,8 @@
             {% block content %}
             {% endblock content %}
         </main>
-        <footer class="bg-gray-200 text-center p-4 mt-8">
-            <p>&copy; 2024 Focus Timer. All rights reserved.</p>
+        <footer class="bg-dark-700 text-dark-100 text-center p-4 mt-8 border-t-4 border-dark-600">
+            <p class="pixelated">&copy; 2024 Focus Timer. All rights reserved.</p>
         </footer>
         {% block extra_body %}{% endblock %}
         <script>
