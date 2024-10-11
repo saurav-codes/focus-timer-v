@@ -2,6 +2,7 @@
 {% load static %}
 
 {% block extra_head %}
+{{ block.super }}
 <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
   .minecraft-btn {
@@ -75,6 +76,15 @@
         </button>
       </div>
       {% endif %}
+
+      <!-- Add this after the timer-controls div and before the focus-cycles-list div -->
+
+      <div class="share-session-container text-center mb-8">
+        <button id="shareSessionBtn" class="minecraft-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto">
+          <i class="fas fa-share-alt mr-2"></i> Share Session
+        </button>
+        <div id="shareSessionFeedback" class="mt-2 text-sm text-green-400 opacity-0 transition-opacity duration-300"></div>
+      </div>
 
       <div id="focus-cycles-list" class="bg-gray-700 border-2 border-gray-600 rounded-lg p-4 mb-6">
         <h3 class="text-2xl font-bold mb-4 text-yellow-400">Focus Cycles</h3>

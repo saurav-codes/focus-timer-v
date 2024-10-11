@@ -349,3 +349,44 @@ document.addEventListener("DOMContentLoaded", (event) => {
   }
 
 });
+
+
+// share link functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const shareSessionBtn = document.getElementById('shareSessionBtn');
+  const shareSessionFeedback = document.getElementById('shareSessionFeedback');
+
+  if (shareSessionBtn) {
+    shareSessionBtn.addEventListener('click', function() {
+      const currentUrl = window.location.href;
+
+      navigator.clipboard.writeText(currentUrl).then(function() {
+        // Success feedback
+        shareSessionFeedback.textContent = 'Session link copied to clipboard!';
+        shareSessionFeedback.classList.remove('opacity-0');
+        shareSessionBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        shareSessionBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+        shareSessionBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
+
+        // Reset button after 3 seconds
+        setTimeout(function() {
+          shareSessionFeedback.classList.add('opacity-0');
+          shareSessionBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+          shareSessionBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+          shareSessionBtn.innerHTML = '<i class="fas fa-share-alt mr-2"></i> Share Session';
+        }, 3000);
+      }, function() {
+        // Error feedback
+        shareSessionFeedback.textContent = 'Failed to copy. Please try again.';
+        shareSessionFeedback.classList.remove('opacity-0');
+        shareSessionFeedback.classList.add('text-red-500');
+
+        // Reset feedback after 3 seconds
+        setTimeout(function() {
+          shareSessionFeedback.classList.add('opacity-0');
+          shareSessionFeedback.classList.remove('text-red-500');
+        }, 3000);
+      });
+    });
+  }
+});
