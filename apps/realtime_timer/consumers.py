@@ -105,30 +105,30 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         elif timer_state == "resumed":
             await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
 
-    @check_session_owner_async
-    async def change_cycle_if_needed(self, session):
-        """
-        This function is called by the system to change the cycle if needed
-        it is called when the timer is stopped or when the timer is paused/resumed
-        usually it will be called by system on the scheduled time as we are using
-        redis zset to store the scheduled time to change the cycle
-        """
-        logger.info(
-            f"Changing cycle if needed for user '{self.user.username}' in session '{self.session_id}'",
-            extra={"request": self.request},
-        )
-        cycle_changed = await self.timer_service.change_cycle_if_needed(session=session)
-        if cycle_changed:
-            # Send notification when cycle changes
-            cycle_type = session.current_cycle.cycle_type.lower()
-            message = f"Time's up! Your {cycle_type} session has ended."
-            logger.info("cycle is completed. so sending notification")
-            await send_onesignal_notification(self.session_id, message)
-        else:
-            logger.info("cycle is not completed. so not sending notification")
+    # @check_session_owner_async
+    # async def change_cycle_if_needed(self, session):
+    #     """
+    #     This function is called by the system to change the cycle if needed
+    #     it is called when the timer is stopped or when the timer is paused/resumed
+    #     usually it will be called by system on the scheduled time as we are using
+    #     redis zset to store the scheduled time to change the cycle
+    #     """
+    #     logger.info(
+    #         f"Changing cycle if needed for user '{self.user.username}' in session '{self.session_id}'",
+    #         extra={"request": self.request},
+    #     )
+    #     cycle_changed = await self.timer_service.change_cycle_if_needed(session=session)
+    #     if cycle_changed:
+    #         # Send notification when cycle changes
+    #         cycle_type = session.current_cycle.cycle_type.lower()
+    #         message = f"Time's up! Your {cycle_type} session has ended."
+    #         logger.info("cycle is completed. so sending notification")
+    #         await send_onesignal_notification(self.session_id, message)
+    #     else:
+    #         logger.info("cycle is not completed. so not sending notification")
 
-        # now we have new cycle so we need to schedule the next cycle change
-        await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
+    #     # now we have new cycle so we need to schedule the next cycle change
+    #     await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
 
     @check_session_owner_async
     async def stop_timer(self):
@@ -138,10 +138,6 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         )
         await self.timer_service.stop_timer()
         await self.timer_service.cancel_scheduled_cycle_change_if_timer_stopped(self.redis_client, self.session_id)
-
-        # Send notification when timer is completed
-        message = "Congratulations! You've completed your focus session."
-        await send_onesignal_notification(self.session_id, message)
 
     async def send_timer_update_to_all_clients(self):
         session = await selectors.get_session_by_id_async(self.session_id)
@@ -210,10 +206,10 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.update_session_will_finish_at_to_all_clients()
         await self.update_session_followers_list_to_all_clients()
 
-    async def cycle_change(self, event):
-        """
-        Handle the cycle_change event sent by the Redis scheduler.
-        """
-        logger.info(f"Received cycle_change event for session '{self.session_id}'")
-        session = await selectors.get_session_by_id_async(self.session_id)
-        await self.change_cycle_if_needed(session=session)
+    # async def cycle_change(self, event):
+    #     """
+    #     Handle the cycle_change event sent by the Redis scheduler.
+    #     """
+    #     logger.info(f"Received cycle_change event for session '{self.session_id}'")
+    #     session = await selectors.get_session_by_id_async(self.session_id)
+    #     await self.change_cycle_if_needed(session=session)

@@ -3,6 +3,7 @@ from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse
 
 from apps.realtime_timer.business_logic import selectors
+from apps.realtime_timer.business_logic.onesignal import send_onesignal_notification
 
 from ..models import FocusPeriod, FocusSession, FocusCycle, FocusSessionFollower
 from django.contrib.auth import get_user_model
@@ -189,6 +190,9 @@ class AsyncTimerService:
         # syncing the timer after saving is neccessary so no choice here
         # other than direct passing trigger_timer_sync = True
         await session.asave(trigger_timer_sync=True)
+        # Send notification when timer is completed
+        message = "Congratulations! You've completed your focus session."
+        await send_onesignal_notification(self.session_id, message)
 
     async def resume_timer(self):
         session = await selectors.get_session_by_id_locked_async(self.session_id)
@@ -288,6 +292,10 @@ class AsyncTimerService:
         all_focus_period_duration = await selectors.get_all_focus_period_duration_for_current_cycle_async(current_cycle)
         if await self._is_cycle_transition_needed(current_cycle, all_focus_period_duration):
             await self._transition_to_next_cycle()
+            # Send notification when cycle changes
+            focus_type = current_cycle.cycle_type.lower()
+            message = f"Time's up! Your {focus_type} session has ended."
+            await send_onesignal_notification(self.session_id, message)
             return True
         return False
 
