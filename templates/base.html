@@ -6,18 +6,16 @@
     <title>{% block title %}Focus Timer{% endblock %}</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-            appId: "2c87ff67-1aa5-46d0-8fc0-bcae2d633018",
-            safari_web_id: "web.onesignal.auto.5f176c09-6482-49c9-87ea-0c57aa3981a0",
-            notifyButton: {
-                enable: true,
-            },
-            serviceWorkerParam: { scope: "/static/js/"},
-            serviceWorkerPath: "/static/js/OneSignalSDKWorker.js",
-            });
-        });
+	      window.OneSignalDeferred = window.OneSignalDeferred || [];
+	      OneSignalDeferred.push(async function(OneSignal) {
+				      await OneSignal.init({
+		  appId:"cc25f71c-5bd2-4077-98d7-aca31f76a805",
+	          safari_web_id: "web.onesignal.auto.613528e9-2930-4b07-a098-5a9518822d98",
+	          notifyButton: {
+	            enable: true,
+	          },
+							      });
+				    });
     </script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
