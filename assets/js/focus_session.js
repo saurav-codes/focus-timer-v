@@ -35,6 +35,7 @@ class FocusSessionManager {
       console.log("Received will finish at update from server", data);
       this.update_will_finish_at_display(data);
     } else if (data.type === "onesignal_tag") {
+      console.log("Received OneSignal tag update", data);
       this.setOneSignalTag(data.session_id);
     }
   }
@@ -263,8 +264,13 @@ class FocusSessionManager {
 
   setOneSignalTag(sessionId) {
     if (typeof OneSignal !== 'undefined') {
-      OneSignal.sendTag("session_id", sessionId);
-      console.log(`Set OneSignal tag for session: ${sessionId}`);
+      OneSignal.push(function() {
+        OneSignal.sendTag("session_id", sessionId).then(function(tagsSent) {
+          console.log(`OneSignal tag set for session: ${sessionId}`, tagsSent);
+        }).catch(function(error) {
+          console.error("Error setting OneSignal tag:", error);
+        });
+      });
     } else {
       console.error("OneSignal is not defined");
     }
