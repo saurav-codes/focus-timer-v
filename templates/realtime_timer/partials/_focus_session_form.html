@@ -130,6 +130,7 @@ input[type="number"] {
     <div class="mb-6">
         <label for="{{ focus_session_form.technique.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">Technique:</label>
         {{ focus_session_form.technique }}
+        <p class="text-sm text-gray-400 mt-1">Select the technique for your focus session.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -219,8 +220,14 @@ input[type="number"] {
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out mt-6">
                 Start Focus Session
             </button>
+            {% if generated_focus_cycle_data.technique_description %}
+                <div id="technique-description" class="mt-4 bg-gray-700 p-4">
+                    {{ generated_focus_cycle_data.technique_description|safe }}
+                </div>
+            {% endif %}
         </div>
     {% endif %}
+
 </form>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"
         integrity="sha512-TelkP3PCMJv+viMWynjKcvLsQzx6dJHvIGhfqzFtZKgAjKM1YPqcwzzDEoTc/BHjf43PcPzTQOjuTr4YdE8lNQ=="

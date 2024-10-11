@@ -1,6 +1,7 @@
 import datetime
 
 from pytz import UTC
+from django.utils.safestring import mark_safe
 from ..models import FocusCycle, FocusSession
 
 
@@ -282,6 +283,110 @@ def generate_flowtime_cycles(total_time):
     return cycles, remaining_time
 
 
+# Add this constant at the top of the file, after imports
+TECHNIQUE_DESCRIPTIONS = {
+    FocusSession.CAMEL_TECHNIQUE: mark_safe(
+        """
+    <h3>Camel Technique</h3>
+        <p>The Camel Technique is a focus method that alternates between longer and shorter work periods, mimicking a camel's humps. It typically starts with a longer focus session (e.g., 90 minutes), followed by a short break, then a shorter focus session (e.g., 25 minutes), and another break.</p>
+        <p>This technique was developed to leverage the natural ebb and flow of human attention spans, allowing for deep work during longer sessions and quick bursts of productivity during shorter ones.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Balances intense focus with regular breaks</li>
+            <li>Adapts to different types of tasks</li>
+            <li>Helps maintain energy throughout the day</li>
+        </ul>
+        <p>You can read more about this technique <a class="text-blue-400" href="https://www.twitch.tv/vanyastudytogether/about" target="_blank">here</a></p>
+    """
+    ),
+    FocusSession.POMODORO_TECHNIQUE: mark_safe(
+        """
+        <h3>Pomodoro Technique</h3>
+        <p>The Pomodoro Technique, developed by Francesco Cirillo in the late 1980s, uses a timer to break work into intervals, traditionally 25 minutes in length, separated by short breaks.</p>
+        <p>This technique is named after the tomato-shaped kitchen timer that Cirillo used as a university student. ("Pomodoro" is Italian for tomato.)</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Improves focus and concentration</li>
+            <li>Reduces mental fatigue</li>
+            <li>Increases accountability and motivation</li>
+        </ul>
+        <p>Learn more about the Pomodoro Technique <a class="text-blue-400" href="https://en.wikipedia.org/wiki/Pomodoro_Technique" target="_blank">here</a>.</p>
+    """
+    ),
+    FocusSession.FOCUS_52_17_TECHNIQUE: mark_safe(
+        """
+        <h3>52/17 Method</h3>
+        <p>The 52/17 method suggests working for 52 minutes followed by a 17-minute break. This technique was discovered by analyzing the habits of the most productive employees using a time-tracking app called DeskTime.</p>
+        <p>The idea is to work with intense focus for about an hour and then take a substantial break to recharge.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Promotes high-intensity focus</li>
+            <li>Allows for proper mental recovery</li>
+            <li>Helps maintain high productivity throughout the day</li>
+        </ul>
+        <p>Read more about the 52/17 method <a class="text-blue-400" href="https://www.themuse.com/advice/the-rule-of-52-and-17-its-random-but-it-ups-your-productivity" target="_blank">here</a>.</p>
+    """
+    ),
+    FocusSession.FOCUS_90_TECHNIQUE: mark_safe(
+        """
+        <h3>90-Minute Focus Sessions</h3>
+        <p>The 90-minute focus technique is based on the body's natural rhythm called the ultradian rhythm. This rhythm suggests that our minds can focus intensely for about 90 minutes before needing a break.</p>
+        <p>This method was popularized by researchers at Florida State University, who found that elite performers tend to work in focused 90-minute sessions.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Aligns with the body's natural energy cycles</li>
+            <li>Allows for deep, focused work</li>
+            <li>Promotes better work-life balance</li>
+        </ul>
+        <p>Discover more about this <a class="text-blue-400" href="https://blog.macaw-app.com/hack-your-focus-master-the-90-minute-rhythm-for-productivity-and-wellbeing/" target="_blank">here</a>.</p>
+    """
+    ),
+    FocusSession.FOCUS_2_HOURS_TECHNIQUE: mark_safe(
+        """
+        <h3>2-Hour Focus Blocks</h3>
+        <p>The 2-hour focus block technique involves dedicating larger chunks of uninterrupted time to deep work. This method is often used by professionals who need extended periods of concentration for complex tasks.</p>
+        <p>While not attributed to a specific person, this technique is popular among writers, programmers, and other creative professionals who benefit from long stretches of focused work.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Ideal for complex, creative tasks</li>
+            <li>Reduces context-switching</li>
+            <li>Allows for achieving a state of 'flow'</li>
+        </ul>
+        <p>Learn more about deep work and extended focus sessions <a class="text-blue-400" href="https://en.wikipedia.org/wiki/Flow_(psychology)" target="_blank">here</a>.</p>
+    """
+    ),
+    FocusSession.FLOWTIME_TECHNIQUE: mark_safe(
+        """
+        <h3>Flowtime Technique</h3>
+        <p>The Flowtime Technique is a flexible focus method that allows you to work for as long as you can maintain focus, followed by a break proportional to your work time. It was developed as an alternative to rigid time-boxing methods.</p>
+        <p>This technique encourages you to listen to your body and mind, working when you're in the flow and taking breaks when needed.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Adapts to personal energy levels and focus capacity</li>
+            <li>Reduces pressure of fixed time intervals</li>
+            <li>Encourages self-awareness and productivity tracking</li>
+        </ul>
+        <p>Explore more about the Flowtime Technique <a class="text-blue-400" href="https://medium.com/@lightsonsoftware/the-flowtime-technique-7685101bd191" target="_blank">here</a>.</p>
+    """
+    ),
+    FocusSession.CUSTOM_TECHNIQUE: mark_safe(
+        """
+        <h3>Custom Technique</h3>
+        <p>The Custom Technique allows you to create your own focus and break patterns tailored to your specific needs and preferences.</p>
+        <p>This flexibility is perfect for those who have found that standard techniques don't quite fit their work style or for tasks that require a unique approach.</p>
+        <p>Benefits include:</p>
+        <ul>
+            <li>Fully customizable to your needs</li>
+            <li>Can be adapted for different types of tasks</li>
+            <li>Allows for experimentation to find your optimal work rhythm</li>
+        </ul>
+        <p>Learn about various productivity techniques <a class="text-blue-400" href="https://en.wikipedia.org/wiki/Time_management" target="_blank">here</a>.</p>
+    """
+    ),
+}
+
+
+# Modify the generate_focus_cycle_data_based_on_technique_and_duration function
 def generate_focus_cycle_data_based_on_technique_and_duration(
     technique: str,
     total_time: int,
@@ -324,4 +429,5 @@ def generate_focus_cycle_data_based_on_technique_and_duration(
         "exact_time_after_finishing_all_cycles": exact_time_after_finishing_all_cycles.isoformat(),
         "extra_time_left": remaining_time,
         "total_minutes_distributed": total_cycles_duration,
+        "technique_description": TECHNIQUE_DESCRIPTIONS.get(technique),
     }
