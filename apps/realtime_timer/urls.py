@@ -10,10 +10,10 @@ app_name = "realtime_timer"
 
 urlpatterns = [
     path("", views.LandingPageView.as_view(), name="landing-page"),
-    path("home/", views.HomepageView.as_view(), name="homepage-view"),
-    path("main-session/", views.MainSessionView.as_view(), name="main-session-view"),
+    path("sessions-list/", views.SessionListView.as_view(), name="sessions-list-view"),
+    path("session-form/", views.SessionFormView.as_view(), name="session-form-view"),
     path("session/<uuid:session_id>/", views.SessionDetailView.as_view(), name="session-detail-view"),
-    # path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    path("dashboard/", views.DashboardView.as_view(), name="dashboard-view"),
     # path("task/create/", views.CreateTaskView.as_view(), name="create_task"),
     # path("task/<int:task_id>/toggle/", views.ToggleTaskView.as_view(), name="toggle_task"),
 ]

@@ -5,10 +5,13 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, render
+from django.db.models import Sum, Avg, Count, Q
+from django.utils import timezone
+from datetime import timedelta
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusSession
+from apps.realtime_timer.models import FocusSession, FocusCycle
 
 from .business_logic import selectors
 from .forms import FocusSessionForm
@@ -20,31 +23,31 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-class HomepageView(LoginRequiredMixin, TemplateView):
-    template_name = "realtime_timer/homepage.html"
+class SessionListView(LoginRequiredMixin, TemplateView):
+    template_name = "realtime_timer/sessions_list.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
         context_data["user_sessions"] = FocusSession.objects.filter(owner=self.request.user)[:10]
         logger.info(
-            f"HomepageView: Retrieved user sessions for homepage by user: {self.request.user.username}",  # type: ignore
+            f"SessionListView: Retrieved user sessions for session list by user: {self.request.user.username}",  # type: ignore
             extra={"request": self.request},
         )
         return context_data
 
 
-class MainSessionView(LoginRequiredMixin, TemplateView):
+class SessionFormView(LoginRequiredMixin, TemplateView):
     """
     Main Session Page from where user can set the timer
     """
 
-    template_name = "realtime_timer/main_session.html"
+    template_name = "realtime_timer/session_form.html"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
         context_data["focus_session_form"] = FocusSessionForm()
         logger.info(
-            f"MainSessionView: Retrieved focus session form for main session page by user: {self.request.user.username}",
+            f"SessionFormView: Retrieved focus session form for session form page by user: {self.request.user.username}",
             extra={"request": self.request},
         )
         return context_data
@@ -107,40 +110,57 @@ class SessionDetailView(View):
         return HttpResponseClientRedirect(session_detail_url)
 
 
-# class DashboardView(LoginRequiredMixin, ListView):
-#     template_name = "dashboard.html"
-#     context_object_name = "user_sessions"
-
-#     def get_queryset(self):
-#         return selectors.get_user_sessions(user=self.request.user)
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context["followed_sessions"] = selectors.get_followed_sessions(user=self.request.user)
-#         return context
-
-
-# class CreateTaskView(LoginRequiredMixin, View):
-#     def post(self, request):
-#         session_id = request.POST.get("session_id")
-#         description = request.POST.get("description")
-#         session = selectors.get_focus_session_by_id(session_id=session_id)
-#         task = services.create_task(session=session, description=description)
-#         return HttpResponse(
-#             f'<li hx-target="this" hx-swap="outerHTML" id="task-{task.pk}">{task.description} <button hx-post="/task/{task.pk}/toggle/">Toggle</button></li>'
-#         )
-
-
-# class ToggleTaskView(LoginRequiredMixin, View):
-#     def post(self, request, task_id):
-#         task = selectors.get_task_by_id(task_id=task_id)
-#         if request.user == task.session.owner:
-#             services.toggle_task(task=task)
-#             return HttpResponse(
-#                 f'<li hx-target="this" hx-swap="outerHTML" id="task-{task.pk}">{task.description} <button hx-post="/task/{task.pk}/toggle/">Toggle</button></li>'
-#             )
-#         return HttpResponse("Unauthorized", status=403)
-
-
 class LandingPageView(TemplateView):
     template_name = "realtime_timer/landing_page.html"
+
+
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "realtime_timer/dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Get user's sessions
+        user_sessions = FocusSession.objects.filter(owner=user)
+
+        # Calculate overall statistics
+        total_focus_time = user_sessions.aggregate(total=Sum("total_focus_completed"))["total"] or timedelta()
+
+        total_sessions = user_sessions.count()
+        avg_session_length = user_sessions.aggregate(avg=Avg("total_focus_completed"))["avg"] or timedelta()
+
+        # Get data for charts
+        last_30_days = timezone.now() - timedelta(days=30)
+        daily_focus_time = (
+            user_sessions.filter(created_at__gte=last_30_days)
+            .values("created_at__date")
+            .annotate(total=Sum("total_focus_completed"))
+            .order_by("created_at__date")
+        )
+
+        # Convert timedelta to minutes for easier charting
+        daily_focus_time = [
+            {"date": item["created_at__date"], "total": item["total"].total_seconds() / 60 if item["total"] else 0}
+            for item in daily_focus_time
+        ]
+
+        technique_distribution = (
+            user_sessions.values("technique").annotate(count=Count("session_id")).order_by("-count")
+        )
+
+        # Get recent sessions
+        recent_sessions = user_sessions.order_by("-created_at")[:5]
+
+        context.update(
+            {
+                "total_focus_time": total_focus_time,
+                "total_sessions": total_sessions,
+                "avg_session_length": avg_session_length,
+                "daily_focus_time": daily_focus_time,
+                "technique_distribution": list(technique_distribution),
+                "recent_sessions": recent_sessions,
+            }
+        )
+
+        return context

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load json_filters static time_filters %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock extra_head %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1 class="dashboard-title text-2xl font-bold text-blue-300"><i class="fas fa-chart-line"></i> Focus Session Dashboard</h1>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <i class="fas fa-clock stat-icon"></i>
+            <h3>Total Focus Time</h3>
+            <p>{{ total_focus_time|timeformat }}</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-calendar-check stat-icon"></i>
+            <h3>Total Sessions</h3>
+            <p>{{ total_sessions }}</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-hourglass-half stat-icon"></i>
+            <h3>Avg. Session Length</h3>
+            <p>{{ avg_session_length|timeformat }}</p>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-card">
+            <h3><i class="fas fa-chart-area"></i> Daily Focus Time (Last 30 Days)</h3>
+            <canvas id="dailyFocusChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3><i class="fas fa-chart-pie"></i> Technique Distribution</h3>
+            <canvas id="techniqueDistributionChart"></canvas>
+        </div>
+    </div>
+
+    <div class="recent-sessions">
+        <h3><i class="fas fa-history"></i> Recent Sessions</h3>
+        <ul>
+            {% for session in recent_sessions %}
+            <li>
+                <a href="{{ session.get_absolute_url }}">
+                    <i class="fas fa-play-circle"></i> {{ session.label }} - {{ session.created_at|date:"M d, Y" }}
+                </a>
+            </li>
+            {% empty %}
+            <li><i class="fas fa-exclamation-circle"></i> No recent sessions</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<script>
+    // Daily Focus Time Chart
+    var dailyFocusCtx = document.getElementById('dailyFocusChart').getContext('2d');
+    var dailyFocusChart = new Chart(dailyFocusCtx, {
+        type: 'line',
+        data: {
+            labels: {{ daily_focus_time|jsonify:"date"|safe }},
+            datasets: [{
+                label: 'Focus Time (minutes)',
+                data: {{ daily_focus_time|jsonify:"total"|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Minutes'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                }
+            }
+        }
+    });
+
+    // Technique Distribution Chart
+    var techniqueCtx = document.getElementById('techniqueDistributionChart').getContext('2d');
+    var techniqueChart = new Chart(techniqueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ technique_distribution|jsonify:"technique"|safe }},
+            datasets: [{
+                data: {{ technique_distribution|jsonify:"count"|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)',
+                    'rgba(255, 159, 64, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                }
+            }
+        }
+    });
+</script>
+{% endblock content %}

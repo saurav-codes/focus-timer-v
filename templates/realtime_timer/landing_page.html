@@ -28,7 +28,7 @@
                 <h2 class="text-3xl font-bold mb-4 text-dark-100 pixelated">Get Started Now</h2>
                 <p class="text-dark-200 mb-6 pixelated">Create your first focus session and experience the power of structured productivity.</p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'realtime_timer:main-session-view' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
+                    <a href="{% url 'realtime_timer:session-form-view' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
                         Create Session
                     </a>
                 {% else %}

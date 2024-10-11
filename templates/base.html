@@ -85,8 +85,9 @@
                 <a href="{% url 'realtime_timer:landing-page' %}" class="text-2xl font-bold pixelated">Focus Timer</a>
                 <ul class="flex space-x-4">
                     {% if user.is_authenticated %}
-                        <li><a href="{% url 'realtime_timer:homepage-view' %}" class="hover:text-dark-300 pixelated">Dashboard</a></li>
-                        <li><a href="{% url 'realtime_timer:main-session-view' %}" class="hover:text-dark-300 pixelated">Session</a></li>
+                        <li><a href="{% url 'realtime_timer:sessions-list-view' %}" class="hover:text-dark-300 pixelated">Sessions</a></li>
+                        <li><a href="{% url 'realtime_timer:session-form-view' %}" class="hover:text-dark-300 pixelated">Timer</a></li>
+                        <li><a href="{% url 'realtime_timer:dashboard-view' %}" class="hover:text-dark-300 pixelated">Dashboard</a></li>
                         <li><a class="hover:text-dark-300 pixelated">{{ user.username }}</a></li>
                         <li><a href="{% url 'account_logout' %}" class="hover:text-dark-300 pixelated">Logout</a></li>
                     {% else %}
