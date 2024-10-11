@@ -1,64 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Focus Timer{% endblock %}</title>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            {% block title %}Focus Timer{% endblock %}
+        </title>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+                defer></script>
+        <script>
 	      window.OneSignalDeferred = window.OneSignalDeferred || [];
-	      OneSignalDeferred.push(async function(OneSignal) {
-				      await OneSignal.init({
-		  appId:"cc25f71c-5bd2-4077-98d7-aca31f76a805",
-	          safari_web_id: "web.onesignal.auto.613528e9-2930-4b07-a098-5a9518822d98",
-	          notifyButton: {
-	            enable: true,
-	          },
-							      });
-				    });
-    </script>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    {% block extra_head %}{% endblock %}
-    <script
-        src="https://beamanalytics.b-cdn.net/beam.min.js"
-        data-token="4d8d10b5-436d-4483-b61d-392ee0f77a3d"
-        async
-    >
-    </script>
-</head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <header class="bg-blue-600 text-white p-4">
-        <nav class="container mx-auto flex justify-between items-center">
-            <a href="{% url 'realtime_timer:homepage-view' %}" class="text-2xl font-bold">Focus Timer</a>
-            <ul class="flex space-x-4">
-                {% if user.is_authenticated %}
-                    <li><a href="{% url 'realtime_timer:main-session-view' %}" class="hover:underline">Session</a></li>
-                    <li><a  class="hover:underline">{{ user.username }}</a></li>
-                    <li><a href="{% url 'account_logout' %}"  class="hover:underline">Logout</a></li>
-                {% else %}
-                    <li><a href="{% url 'account_login' %}"  class="hover:underline">Login</a></li>
-                    <li><a  class="hover:underline">Sign Up</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
-
-    <main class="container mx-auto flex-grow p-4">
-        {% block content %}
-        {% endblock content %}
-    </main>
-
-    <footer class="bg-gray-200 text-center p-4 mt-8">
-        <p>&copy; 2024 Focus Timer. All rights reserved.</p>
-    </footer>
-
-    {% block extra_body %}{% endblock %}
-    <script>
+            OneSignalDeferred.push(async function(OneSignal) {
+                    await OneSignal.init({
+                    appId:"cc25f71c-5bd2-4077-98d7-aca31f76a805",
+                    safari_web_id: "web.onesignal.auto.613528e9-2930-4b07-a098-5a9518822d98",
+                    notifyButton: {
+                        enable: true,
+                    },
+                });
+            });
+        </script>
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+              integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+              crossorigin="anonymous"
+              referrerpolicy="no-referrer" />
+        {% block extra_head %}{% endblock %}
+        <script src="https://beamanalytics.b-cdn.net/beam.min.js" data-token="4d8d10b5-436d-4483-b61d-392ee0f77a3d" async>
+        </script>
+    </head>
+    <body class="bg-gray-100 min-h-screen flex flex-col">
+        <header class="bg-blue-600 text-white p-4">
+            <nav class="container mx-auto flex justify-between items-center">
+                <a href="{% url 'realtime_timer:homepage-view' %}"
+                   class="text-2xl font-bold">Focus Timer</a>
+                <ul class="flex space-x-4">
+                    {% if user.is_authenticated %}
+                        <li>
+                            <a href="{% url 'realtime_timer:main-session-view' %}"
+                               class="hover:underline">Session</a>
+                        </li>
+                        <li>
+                            <a class="hover:underline">{{ user.username }}</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'account_logout' %}"  class="hover:underline">Logout</a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{% url 'account_login' %}"  class="hover:underline">Login</a>
+                        </li>
+                        <li>
+                            <a class="hover:underline">Sign Up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </header>
+        <main class="container mx-auto flex-grow p-4">
+            {% block content %}
+            {% endblock content %}
+        </main>
+        <footer class="bg-gray-200 text-center p-4 mt-8">
+            <p>&copy; 2024 Focus Timer. All rights reserved.</p>
+        </footer>
+        {% block extra_body %}{% endblock %}
+        <script>
         console.log("%c👋 Well hello there, curious developer!", "font-size: 20px; font-weight: bold; color: #3498db;");
         console.log("%c🕵️‍♂️ Caught you peeking under the hood!", "font-size: 16px; color: #2ecc71;");
         console.log("%c💡I am the only developer working on it.. so, it may have bugs.. if you are facing any issues, please reach out to me @ https://x.com/saurav__codes or email me at selftaughtdev@pm.me", "font-size: 18px; font-weight: bold; color: #e74c3c;");
-    </script>
-</body>
+        </script>
+    </body>
 </html>
