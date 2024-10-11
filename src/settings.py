@@ -38,11 +38,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     "allauth_ui",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "allauth.socialaccount.providers.twitch",
     "widget_tweaks",
     "slippers",
     "django_htmx",
@@ -183,14 +183,6 @@ SITE_ID = 1
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
-
-# Twitch OAuth settings
-SOCIALACCOUNT_PROVIDERS = {
-    "twitch": {
-        "APP": {"client_id": os.getenv("TWITCH_CLIENT_ID"), "secret": os.getenv("TWITCH_SECRET"), "key": ""},
-        "SCOPE": ["user:read:email"],
-    }
-}
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if DEBUG is False else "http"
 ACCOUNT_AUTHENTICATION_METHOD = "username_email"
