@@ -350,9 +350,11 @@ class AsyncTimerService:
             # create a new focus period for the next cycle
             await self.create_new_focus_period(session, next_cycle)
             logger.info(f"transitioned to next cycle with order - {next_cycle.order} & type - {next_cycle.cycle_type}")
+            return True
         else:
             # since there is no next cycle, we will stop the timer
             await self.stop_timer()
+            return False
 
 
 async def trigger_sync_timer_for_all_connected_clients(session_id: str):

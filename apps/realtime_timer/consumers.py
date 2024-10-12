@@ -91,6 +91,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
                     extra={"request": self.request},
                 )
                 await self.sync_timer(text_data)
+            if action == "skip_cycle":
+                await self.skip_cycle()
 
     @check_session_owner_async
     async def toggle_timer(self):
@@ -208,3 +210,13 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
     #     logger.info(f"Received cycle_change event for session '{self.session_id}'")
     #     session = await selectors.get_session_by_id_async(self.session_id)
     #     await self.change_cycle_if_needed(session=session)
+
+    @check_session_owner_async
+    async def skip_cycle(self):
+        logger.info(
+            f"Skipping cycle for user '{self.user.username or self.username}' in session '{self.session_id}'",
+            extra={"request": self.request},
+        )
+        cycle_changed = await self.timer_service._transition_to_next_cycle()
+        if cycle_changed:
+            await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)

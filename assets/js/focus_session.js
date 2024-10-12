@@ -16,6 +16,12 @@ class FocusSessionManager {
     this.willFinishAt = document.getElementById('will-finish-at')?.dataset.willFinishAt;
     console.log(`FocusSessionManager initialized for session: ${sessionId}, user: ${username}`);
     this.updateFinishTime();
+
+    // Add event listener for skip cycle button
+    const skipButton = document.getElementById('skip-cycle-btn');
+    if (skipButton) {
+      skipButton.addEventListener('click', () => this.skipCycle());
+    }
   }
 
   // *****************************************
@@ -66,6 +72,13 @@ class FocusSessionManager {
     console.log("Syncing timer");
     this.send_action_to_server(
       { "action": "sync_timer" }
+    )
+  }
+
+  skipCycle() {
+    console.log("Skipping cycle");
+    this.send_action_to_server(
+      { "action": "skip_cycle" }
     )
   }
 
@@ -286,7 +299,10 @@ class FocusSessionManager {
   updateFinishTime() {
     if (this.willFinishAt) {
       const finishTime = new Date(this.willFinishAt);
-      document.getElementById('finish-time').textContent = this.formatLocalDateTime(finishTime);
+      let finish_time_element = document.getElementById('finish-time');
+      if (finish_time_element) {
+        finish_time_element.textContent = this.formatLocalDateTime(finishTime);
+      }
     }
   }
 
