@@ -119,9 +119,11 @@ class AsyncTimerService:
 
     @database_sync_to_async
     def delete_session_follower(self):
-        FocusSessionFollower.objects.filter(session_id=self.session_id, username=self.user.username).delete()
+        FocusSessionFollower.objects.filter(
+            session_id=self.session_id, username=self.user.username or self.username
+        ).delete()
         logger.info(
-            f"Removing user '{self.user.username}' from session '{self.session_id}' followers",
+            f"Removing user '{self.user.username or self.username}' from session '{self.session_id}' followers",
         )
 
     @database_sync_to_async
@@ -220,12 +222,14 @@ class AsyncTimerService:
         after the timer is started
         """
         session = await selectors.get_session_by_id_async(self.session_id)
-        logger.info(
-            f"Scheduling first cycle change for user '{self.user.username}' in session '{self.session_id}'",
-        )
         if session.timer_state == FocusSession.TIMER_RUNNING:
             current_cycle = await selectors.get_current_cycle_async(session)
-            if current_cycle.order == 1 and not current_cycle.is_scheduled:
+            session_owner = await selectors.get_session_owner_async(session)
+            is_session_owner = self.user == session_owner
+            if current_cycle.order == 1 and not current_cycle.is_scheduled and is_session_owner:
+                logger.info(
+                    f"Scheduling first cycle change for user '{self.user.username or self.username}' in session '{self.session_id}'",
+                )
                 # get the locked row of current cycle to avoid race condition
                 current_cycle = await selectors.get_current_cycle_locked_async(session)
                 all_focus_period_duration = await selectors.get_completed_fp_duration_for_current_cycle_async(
