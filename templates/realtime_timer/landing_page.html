@@ -1,45 +1,86 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .feature-card {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    .screenshot {
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease-in-out;
+    }
+    .screenshot:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock extra_head %}
 
 {% block content %}
-<div class="min-h-screen">
+<div class="min-h-screen bg-gradient-to-b from-dark-900 to-dark-800">
     <div class="container mx-auto px-4 py-16">
-        <div class="text-center">
-            <h1 class="text-5xl font-bold text-dark-100 mb-4 pixelated">Focus Timer</h1>
-            <p class="text-xl text-dark-200 mb-8 pixelated">Boost your productivity with our cloud based timer</p>
+        <div class="text-center mb-16">
+            <h1 class="text-6xl font-bold text-dark-100 mb-4 pixelated">Focus Timer</h1>
+            <p class="text-2xl text-dark-200 mb-8 pixelated">Boost your productivity with our cloud-based timer</p>
+            {% if user.is_authenticated %}
+                <a href="{% url 'realtime_timer:session-form-view' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-block transition duration-300 pixelated text-xl">
+                    Create Session
+                </a>
+            {% else %}
+                <a href="{% url 'account_signup' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-block transition duration-300 pixelated text-xl">
+                    Get Started
+                </a>
+            {% endif %}
         </div>
 
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-            <div class="space-y-6">
-                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+        <div class="grid md:grid-cols-2 gap-12 items-center mb-16">
+            <div class="space-y-8">
+                <div class="feature-card bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
                     <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Customizable Techniques</h2>
                     <p class="text-dark-200 pixelated">Choose from various focus techniques like Camel, Pomodoro, 52/17, or create your own.</p>
                 </div>
-                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+                <div class="feature-card bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
                     <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Community Support</h2>
                     <p class="text-dark-200 pixelated">Join focus sessions with others and stay motivated together.</p>
                 </div>
-                <div class="bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
+                <div class="feature-card bg-dark-700 rounded-lg p-6 shadow-lg border-4 border-dark-600">
                     <h2 class="text-2xl font-semibold mb-2 text-dark-100 pixelated">Real-time Updates</h2>
                     <p class="text-dark-200 pixelated">Track your progress and receive notifications to stay on schedule.</p>
                 </div>
             </div>
-
-            <div class="bg-dark-700 rounded-lg p-8 shadow-lg border-4 border-dark-600">
-                <h2 class="text-3xl font-bold mb-4 text-dark-100 pixelated">Get Started Now</h2>
-                <p class="text-dark-200 mb-6 pixelated">Create your first focus session and experience the power of structured productivity.</p>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'realtime_timer:session-form-view' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
-                        Create Session
-                    </a>
-                {% else %}
-                    <a href="{% url 'account_signup' %}" class="bg-dark-500 hover:bg-dark-400 text-dark-100 font-bold py-3 px-6 rounded-lg inline-block transition duration-300 pixelated">
-                        Sign Up
-                    </a>
-                    <p class="mt-4 text-sm text-dark-300 pixelated">
-                        Already have an account? <a href="{% url 'account_login' %}" class="text-dark-400 hover:underline">Log in</a>
-                    </p>
-                {% endif %}
+            <div class="screenshot-container">
+                <img src="{% static 'images/timer.png' %}" alt="Focus Timer Dashboard" class="screenshot w-full" width="600" height="400">
             </div>
+        </div>
+
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-dark-100 mb-8 pixelated">Visualize Your Progress</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <img src="{% static 'images/dashboard.png' %}" alt="Daily Focus Chart" class="screenshot w-full" width="400" height="300">
+                <img src="{% static 'images/session-list.png' %}" alt="Technique Distribution" class="screenshot w-full" width="400" height="300">
+            </div>
+        </div>
+
+        <div class="bg-dark-700 rounded-lg p-8 shadow-lg border-4 border-dark-600 text-center">
+            <h2 class="text-3xl font-bold mb-4 text-dark-100 pixelated">Ready to Boost Your Productivity?</h2>
+            <p class="text-xl text-dark-200 mb-6 pixelated">Join thousands of users who have improved their focus and achieved more with Focus Timer.</p>
+            {% if user.is_authenticated %}
+                <a href="{% url 'realtime_timer:session-form-view' %}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg inline-block transition duration-300 pixelated text-xl">
+                    Start Focusing Now
+                </a>
+            {% else %}
+                <a href="{% url 'account_signup' %}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg inline-block transition duration-300 pixelated text-xl">
+                    Sign Up for Free
+                </a>
+                <p class="mt-4 text-sm text-dark-300 pixelated">
+                    Already have an account? <a href="{% url 'account_login' %}" class="text-blue-400 hover:underline">Log in</a>
+                </p>
+            {% endif %}
         </div>
     </div>
 </div>
