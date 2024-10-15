@@ -115,6 +115,20 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+
+.technique-info-popup {
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+.technique-info-popup:not(.hidden) {
+    opacity: 1;
+}
+
+.technique-info-icon:hover + .technique-info-popup,
+.technique-info-popup:hover {
+    display: block;
+}
 </style>
 
 <form hx-post="{% url 'realtime_timer:temporary-focus-cycles-generator-view' %}"
@@ -128,7 +142,15 @@ input[type="number"] {
     {% endif %}
     {% csrf_token %}
     <div class="mb-6">
-        <label for="{{ focus_session_form.technique.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">Technique:</label>
+        <label for="{{ focus_session_form.technique.id_for_label }}" class="block text-lg mb-2 text-gray-200 font-semibold">
+            Technique:
+            <span class="relative inline-block ml-2">
+                <i class="fas fa-info-circle text-blue-400 cursor-pointer technique-info-icon" data-technique="{{ focus_session_form.technique.value }}"></i>
+                <div class="technique-info-popup hidden absolute z-10 p-4 bg-gray-800 text-white rounded-lg shadow-lg w-80 text-sm">
+                    <!-- Popup content will be dynamically inserted here -->
+                </div>
+            </span>
+        </label>
         {{ focus_session_form.technique }}
         <p class="text-sm text-gray-400 mt-1">Select the technique for your focus session.</p>
     </div>
@@ -220,11 +242,6 @@ input[type="number"] {
                     class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition duration-300 ease-in-out mt-6">
                 Start Focus Session
             </button>
-            {% if generated_focus_cycle_data.technique_description %}
-                <div id="technique-description" class="mt-4 bg-gray-700 p-4">
-                    {{ generated_focus_cycle_data.technique_description|safe }}
-                </div>
-            {% endif %}
         </div>
     {% endif %}
 
@@ -325,4 +342,65 @@ input[type="number"] {
             timeStyle: 'medium'
         }).format(date);
     }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTechniqueInfo();
+});
+
+function initializeTechniqueInfo() {
+    const techniqueInfoIcon = document.querySelector('.technique-info-icon');
+    const techniqueInfoPopup = document.querySelector('.technique-info-popup');
+    const techniqueSelect = document.getElementById('{{ focus_session_form.technique.id_for_label }}');
+
+    if (techniqueInfoIcon && techniqueInfoPopup && techniqueSelect) {
+        let popupTimeout;
+
+        techniqueInfoIcon.addEventListener('mouseenter', () => {
+            clearTimeout(popupTimeout);
+            techniqueInfoPopup.classList.remove('hidden');
+
+            const technique = techniqueSelect.value;
+            fetchTechniqueInfo(technique, techniqueInfoPopup);
+        });
+
+        techniqueInfoIcon.addEventListener('mouseleave', () => {
+            popupTimeout = setTimeout(() => {
+                techniqueInfoPopup.classList.add('hidden');
+            }, 300);
+        });
+
+        techniqueInfoPopup.addEventListener('mouseenter', () => {
+            clearTimeout(popupTimeout);
+        });
+
+        techniqueInfoPopup.addEventListener('mouseleave', () => {
+            techniqueInfoPopup.classList.add('hidden');
+        });
+
+        // Update technique info when the select changes
+        techniqueSelect.addEventListener('change', () => {
+            const technique = techniqueSelect.value;
+            fetchTechniqueInfo(technique, techniqueInfoPopup);
+        });
+    }
+}
+
+function fetchTechniqueInfo(technique, popup) {
+    // Make an AJAX request to get the technique description
+    fetch(`{% url 'realtime_timer:get-technique-info' %}?technique=${encodeURIComponent(technique)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            popup.innerHTML = data.description;
+        })
+        .catch(error => {
+            console.error('Error fetching technique info:', error);
+            popup.innerHTML = 'Description not available.';
+        });
+}
 </script>

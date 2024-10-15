@@ -16,6 +16,7 @@ urlpatterns = [
     path("dashboard/", views.DashboardView.as_view(), name="dashboard-view"),
     # path("task/create/", views.CreateTaskView.as_view(), name="create_task"),
     # path("task/<int:task_id>/toggle/", views.ToggleTaskView.as_view(), name="toggle_task"),
+    path("get-technique-info/", views.get_technique_info, name="get-technique-info"),
 ]
 
 htmx_urlpatterns = [

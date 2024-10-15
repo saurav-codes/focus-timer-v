@@ -429,5 +429,4 @@ def generate_focus_cycle_data_based_on_technique_and_duration(
         "exact_time_after_finishing_all_cycles": exact_time_after_finishing_all_cycles.isoformat(),
         "extra_time_left": remaining_time,
         "total_minutes_distributed": total_cycles_duration,
-        "technique_description": TECHNIQUE_DESCRIPTIONS.get(technique),
     }

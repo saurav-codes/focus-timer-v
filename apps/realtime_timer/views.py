@@ -1,5 +1,5 @@
 from typing import Any
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
@@ -12,8 +12,7 @@ from asgiref.sync import async_to_sync
 import logging
 
 from apps.realtime_timer.models import FocusSession
-
-from .business_logic import selectors
+from .business_logic import selectors, techniques
 from .forms import FocusSessionForm
 from django_htmx.http import HttpResponseClientRedirect
 
@@ -30,7 +29,7 @@ class SessionListView(LoginRequiredMixin, TemplateView):
         context_data = super().get_context_data(**kwargs)
         context_data["user_sessions"] = FocusSession.objects.filter(owner=self.request.user)[:10]
         logger.info(
-            f"SessionListView: Retrieved user sessions for session list by user: {self.request.user.username}",  # type: ignore
+            f"SessionListView: Retrieved user sessions for session list by user: {self.request.user.get_username()}",
             extra={"request": self.request},
         )
         return context_data
@@ -47,7 +46,7 @@ class SessionFormView(LoginRequiredMixin, TemplateView):
         context_data = super().get_context_data(**kwargs)
         context_data["focus_session_form"] = FocusSessionForm()
         logger.info(
-            f"SessionFormView: Retrieved focus session form for session form page by user: {self.request.user.username}",
+            f"SessionFormView: Retrieved focus session form for session form page by user: {self.request.user.get_username()}",
             extra={"request": self.request},
         )
         return context_data
@@ -59,7 +58,7 @@ class SessionDetailView(View):
         if request.user.is_authenticated:
             will_finish_at = async_to_sync(selectors.get_session_will_finish_at_async)(session=focus_session)
             is_session_owner = focus_session.owner == request.user
-            username = request.user.username
+            username = request.user.get_username()
             logger.info(
                 f"SessionDetailView: Authenticated user {username} accessed session {session_id}",
                 extra={"request": request},
@@ -164,3 +163,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         )
 
         return context
+
+
+def get_technique_info(request):
+    technique = request.GET.get("technique")
+    description = techniques.TECHNIQUE_DESCRIPTIONS.get(technique, "Description not available.")
+    return JsonResponse({"description": description})
