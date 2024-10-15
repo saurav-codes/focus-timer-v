@@ -38,7 +38,7 @@ class FocusSession(models.Model):
         (TIMER_PAUSED, TIMER_PAUSED),
         (TIMER_COMPLETED, TIMER_COMPLETED),
     ]
-    technique = models.CharField(max_length=30, choices=TECHNIQUE_CHOICES, default=CAMEL_TECHNIQUE)
+    technique = models.CharField(max_length=30, choices=TECHNIQUE_CHOICES, default=POMODORO_TECHNIQUE)
     session_id = models.UUIDField(default=uuid4, primary_key=True, editable=False)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="focus_sessions")
     created_at = models.DateTimeField(auto_now_add=True)
