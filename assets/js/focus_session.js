@@ -17,11 +17,6 @@ class FocusSessionManager {
     console.log(`FocusSessionManager initialized for session: ${sessionId}, user: ${username}`);
     this.updateFinishTime();
 
-    // Add event listener for skip cycle button
-    const skipButton = document.getElementById('skip-cycle-btn');
-    if (skipButton) {
-      skipButton.addEventListener('click', () => this.skipCycle());
-    }
   }
 
   // *****************************************
@@ -77,9 +72,23 @@ class FocusSessionManager {
 
   skipCycle() {
     console.log("Skipping cycle");
+    // show a loading state
+    let skipButton = document.getElementById('skip-cycle-btn');
+    const skipButtonOriginalText = skipButton.innerHTML;
     this.send_action_to_server(
       { "action": "skip_cycle" }
     )
+    if (skipButton) {
+      // disable skip button for 2 seconds
+      skipButton.disabled = true;
+      // enable skip button after 3 seconds
+      setTimeout(() => {
+        if (skipButton) {
+          skipButton.innerHTML = skipButtonOriginalText;
+          skipButton.disabled = false;
+        }
+      }, 3000);
+    }
   }
 
   // *****************************************
@@ -180,7 +189,7 @@ class FocusSessionManager {
     const remainingTimeElement = document.getElementById('remaining-time');
     if (remainingTimeElement) {
       let formattedTime = this.formatTime(seconds);
-      remainingTimeElement.textContent = `Remaining Time: ${formattedTime}`;
+      remainingTimeElement.textContent = `${formattedTime}`;
     }
   }
 
@@ -203,21 +212,19 @@ class FocusSessionManager {
   }
 
   update_focus_cycles_list(timerDisplayData) {
-    const focusCyclesListElement = document.getElementById('focus-cycles-list');
-    if (focusCyclesListElement) {
-      focusCyclesListElement.innerHTML = ''; // Clear existing content
+    const focusCyclesContent = document.getElementById('focus-cycles-content');
+    if (focusCyclesContent) {
+      let cyclesHtml = '';
       Object.entries(timerDisplayData.focus_cycles).forEach(([order, cycle]) => {
-        const cycleElement = document.createElement('div');
-        let completed_cycle_prefix = "ᛜ";
-        if (cycle.is_completed) {
-          completed_cycle_prefix = "✅";
-        } else if (cycle.order == timerDisplayData.current_cycle.order) {
-          completed_cycle_prefix = "👉";
-        }
-        cycleElement.textContent = `${completed_cycle_prefix} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}`;
-        focusCyclesListElement.appendChild(cycleElement);
+        const cycleStatus = cycle.is_completed ? '✅' : (cycle.order == timerDisplayData.current_cycle.order ? '👉' : 'ᛜ');
+        cyclesHtml += `<div class="cycle-item">${cycleStatus} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}</div>`;
       });
-      console.log("Updated focus cycles list", timerDisplayData.focus_cycles);
+      focusCyclesContent.innerHTML = cyclesHtml;
+
+      // Apply visibility after updating content
+      if (typeof applyFocusCyclesVisibility === 'function') {
+        applyFocusCyclesVisibility();
+      }
     }
   }
 
@@ -268,7 +275,7 @@ class FocusSessionManager {
       });
 
       if (guest_users.length > 0 | authenticated_users.length > 0) {
-        followersContainer.innerHTML = '<h3>Session Followers</h3>';
+        followersContainer.innerHTML = '';
         followersContainer.innerHTML += '<ul>';
         _populate_session_followers_list(authenticated_users, followersContainer);
         _populate_session_followers_list(guest_users, followersContainer);
@@ -354,7 +361,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
   const focusCyclesTable = document.getElementById('focus-cycles-list');
   if (focusCyclesTable) {
-    focusCyclesTable.addEventListener('change', function(e) {
+    focusCyclesTable.addEventListener('change', function (e) {
       if (e.target.name === 'focus_cycle_duration') {
         const cycles = Array.from(focusCyclesTable.children).map(cycle => ({
           duration: parseInt(cycle.querySelector('input[name="focus_cycle_duration"]').value, 10) * 60 // Convert to seconds
@@ -368,15 +375,15 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
 
 // share link functionality
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const shareSessionBtn = document.getElementById('shareSessionBtn');
   const shareSessionFeedback = document.getElementById('shareSessionFeedback');
 
   if (shareSessionBtn) {
-    shareSessionBtn.addEventListener('click', function() {
+    shareSessionBtn.addEventListener('click', function () {
       const currentUrl = window.location.href;
 
-      navigator.clipboard.writeText(currentUrl).then(function() {
+      navigator.clipboard.writeText(currentUrl).then(function () {
         // Success feedback
         shareSessionFeedback.textContent = 'Session link copied to clipboard!';
         shareSessionFeedback.classList.remove('opacity-0');
@@ -385,20 +392,20 @@ document.addEventListener('DOMContentLoaded', function() {
         shareSessionBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
 
         // Reset button after 3 seconds
-        setTimeout(function() {
+        setTimeout(function () {
           shareSessionFeedback.classList.add('opacity-0');
           shareSessionBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
           shareSessionBtn.classList.add('bg-purple-600', 'hover:bg-purple-700');
           shareSessionBtn.innerHTML = '<i class="fas fa-share-alt mr-2"></i> Share Session';
         }, 3000);
-      }, function() {
+      }, function () {
         // Error feedback
         shareSessionFeedback.textContent = 'Failed to copy. Please try again.';
         shareSessionFeedback.classList.remove('opacity-0');
         shareSessionFeedback.classList.add('text-red-500');
 
         // Reset feedback after 3 seconds
-        setTimeout(function() {
+        setTimeout(function () {
           shareSessionFeedback.classList.add('opacity-0');
           shareSessionFeedback.classList.remove('text-red-500');
         }, 3000);
