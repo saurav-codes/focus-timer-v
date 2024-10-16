@@ -3,10 +3,12 @@ These views are specifically for HTMX
 as they return response suitable for HTMX
 """
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
-from apps.realtime_timer.models import FocusSession
+from apps.realtime_timer.business_logic import selectors
+from apps.realtime_timer.models import FocusSession, Task
 from .business_logic import services, techniques
 from .forms import FocusSessionForm
 from django.urls import reverse
@@ -78,3 +80,31 @@ def focus_cycles_and_session_create_view(request):
 def add_cycle_to_cycle_table_view(request):
     new_cycle_index = int(request.GET.get("index", 0)) + 1
     return render(request, "realtime_timer/partials/_new_cycle_form.html", {"index": new_cycle_index})
+
+
+@login_required
+@require_POST
+def create_task(request, session_id):
+    session = get_object_or_404(FocusSession, session_id=session_id, owner=request.user)
+    description = request.POST.get("description")
+    Task.objects.create(user=request.user, session=session, description=description)
+    tasks = selectors.get_user_tasks(request.user)
+    return render(request, "realtime_timer/partials/_task_list.html", {"tasks": tasks, "focus_session": session})
+
+
+@login_required
+@require_POST
+def toggle_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.is_completed = not task.is_completed
+    task.save()
+    if task.is_completed:
+        toast_message = "Congratulations! You have completed the task.🎉"
+    else:
+        toast_message = "You have undone the task.🔄"
+    tasks = selectors.get_user_tasks(request.user)
+    return render(
+        request,
+        "realtime_timer/partials/_task_list.html",
+        {"tasks": tasks, "focus_session": task.session, "toast_message": toast_message},
+    )

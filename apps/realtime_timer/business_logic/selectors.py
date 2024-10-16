@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Sum
-from ..models import FocusSession, FocusCycle, FocusPeriod, FocusSessionFollower
+from ..models import FocusSession, FocusCycle, FocusPeriod, FocusSessionFollower, Task
 from django.contrib.auth import get_user_model
 from channels.db import database_sync_to_async
 from uuid import UUID
@@ -213,3 +213,7 @@ def get_session_will_finish_at_async(*, session: FocusSession):
     # time user will finish the session at
     time_user_will_finish_at = timezone.now() + total_time_left_to_focus
     return time_user_will_finish_at.isoformat()
+
+
+def get_user_tasks(user):
+    return Task.objects.filter(user=user)

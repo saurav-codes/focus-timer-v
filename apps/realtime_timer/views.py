@@ -11,7 +11,7 @@ from datetime import timedelta
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusSession
+from apps.realtime_timer.models import FocusSession, Task
 from .business_logic import selectors, techniques
 from .forms import FocusSessionForm
 from django_htmx.http import HttpResponseClientRedirect
@@ -59,6 +59,7 @@ class SessionDetailView(View):
             will_finish_at = async_to_sync(selectors.get_session_will_finish_at_async)(session=focus_session)
             is_session_owner = focus_session.owner == request.user
             username = request.user.get_username()
+            tasks = selectors.get_user_tasks(request.user)
             logger.info(
                 f"SessionDetailView: Authenticated user {username} accessed session {session_id}",
                 extra={"request": request},
@@ -70,6 +71,7 @@ class SessionDetailView(View):
             # since we store username in session storage when unauthenticated user
             # try to join the session
             username = request.session.get("username", None)
+            tasks = None
             logger.info(f"SessionDetailView: Anonymous user accessed session {session_id}", extra={"request": request})
 
         return render(
@@ -81,6 +83,7 @@ class SessionDetailView(View):
                 "is_session_owner": is_session_owner,
                 "username": username,
                 "debug": settings.DEBUG,
+                "tasks": tasks,
             },
         )
 

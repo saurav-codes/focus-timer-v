@@ -395,6 +395,27 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
   }
 
+  const taskToggle = document.getElementById('taskToggle');
+  const taskPopup = document.getElementById('taskPopup');
+  const closeTaskPopup = document.getElementById('closeTaskPopup');
+
+  if (taskToggle && taskPopup && closeTaskPopup) {
+    taskToggle.addEventListener('click', function() {
+      taskPopup.classList.remove('hidden');
+    });
+
+    closeTaskPopup.addEventListener('click', function() {
+      taskPopup.classList.add('hidden');
+    });
+
+    // Close popup when clicking outside
+    taskPopup.addEventListener('click', function(e) {
+      if (e.target === taskPopup) {
+        taskPopup.classList.add('hidden');
+      }
+    });
+  }
+
 });
 
 

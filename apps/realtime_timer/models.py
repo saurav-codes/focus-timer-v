@@ -50,6 +50,7 @@ class FocusSession(models.Model):
     # total time spent focusing
     total_focus_completed = models.DurationField(default=timezone.timedelta)
     timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)
+    tasks = models.ManyToManyField("Task", related_name="sessions", blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -124,7 +125,7 @@ class FocusCycle(models.Model):
 
 class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")
-    session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="tasks")
+    session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="session_tasks")
     description = models.CharField(max_length=255)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -132,6 +133,9 @@ class Task(models.Model):
 
     def __str__(self):
         return self.description
+
+    class Meta:
+        ordering = ["-created_at", "-updated_at"]
 
 
 class FocusSessionFollower(models.Model):
