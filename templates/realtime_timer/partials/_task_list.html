@@ -1,16 +1,23 @@
 <!-- templates/realtime_timer/partials/_task_list.html -->
 
 <style>
+  .task-list {
+    background-color: #1e2a3a;
+    border-radius: 8px;
+    padding: 1rem;
+  }
   .task-form {
     margin-bottom: 1rem;
+    display: flex;
   }
   .task-input {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3a3a;
+    flex-grow: 1;
+    background-color: #2a3a4a;
+    border: 1px solid #3a4a5a;
     color: #fff;
     padding: 0.5rem;
-    width: 70%;
     margin-right: 0.5rem;
+    border-radius: 4px;
   }
   .task-submit {
     background-color: #4a69bd;
@@ -18,27 +25,51 @@
     border: none;
     padding: 0.5rem 1rem;
     cursor: pointer;
+    border-radius: 4px;
   }
   .task-item {
     display: flex;
     align-items: center;
-    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  .task-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
   .task-checkbox {
     margin-right: 0.5rem;
+    cursor: pointer;
   }
   .task-description {
     flex-grow: 1;
+    color: #fff;
   }
   .task-completed .task-description {
     text-decoration: line-through;
     color: #888;
   }
+  .delete-task-btn {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: none;
+    border: none;
+    color: #ff4d4d;
+    cursor: pointer;
+    padding: 0.25rem;
+  }
+  .task-item:hover .delete-task-btn {
+    opacity: 1;
+  }
 </style>
 
 <div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' id="taskList" class="task-list">
-  <form hx-post="{% url 'realtime_timer:create_task' session_id=focus_session.session_id %}" hx-target="#taskList" hx-swap="outerHTML" class="task-form">
-    <input type="text" name="description" placeholder="New task" required class="task-input">
+  <form hx-post="{% url 'realtime_timer:create_task' session_id=focus_session.session_id %}"
+        hx-target="#taskList"
+        hx-swap="outerHTML"
+        hx-trigger="submit, taskAdded from:body"
+        class="task-form">
+    <input type="text" name="description" placeholder="New task" required class="task-input" id="taskInput">
     <button type="submit" class="task-submit">Add</button>
   </form>
   <div id="taskItems">
@@ -50,9 +81,15 @@
                hx-swap="outerHTML"
                hx-trigger="change">
         <span class="task-description">{{ task.description }}</span>
+        <button class="delete-task-btn"
+                hx-post="{% url 'realtime_timer:delete_task' task_id=task.id %}"
+                hx-target="#taskList"
+                hx-swap="outerHTML">
+          <i class="fas fa-trash-alt"></i>
+        </button>
       </div>
     {% empty %}
-      <p>No tasks yet.</p>
+      <p class="text-gray-400">No tasks yet.</p>
     {% endfor %}
   </div>
 </div>
@@ -125,4 +162,16 @@ function showToast(message, type = 'success') {
 {% if toast_message %}
   showToast("{{ toast_message }}", "success");
 {% endif %}
+
+// Focus the input field after adding a task
+document.body.addEventListener('htmx:afterSwap', function(event) {
+  if (event.detail.target.id === 'taskList') {
+    const taskInput = document.getElementById('taskInput');
+    if (taskInput) {
+      taskInput.focus();
+      // Trigger a custom event to re-focus the input field
+      document.body.dispatchEvent(new Event('taskAdded'));
+    }
+  }
+});
 </script>

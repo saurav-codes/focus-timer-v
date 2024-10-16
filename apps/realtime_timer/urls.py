@@ -35,6 +35,7 @@ htmx_urlpatterns = [
         htmx_views.add_cycle_to_cycle_table_view,
         name="add-cycle-to-cycle-table-view",
     ),
+    path("delete-task/<int:task_id>/", htmx_views.delete_task, name="delete_task"),
 ]
 
 urlpatterns += htmx_urlpatterns

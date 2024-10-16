@@ -108,3 +108,18 @@ def toggle_task(request, task_id):
         "realtime_timer/partials/_task_list.html",
         {"tasks": tasks, "focus_session": task.session, "toast_message": toast_message},
     )
+
+
+@login_required
+@require_POST
+def delete_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    session = task.session
+    task.delete()
+    toast_message = "Task deleted successfully."
+    tasks = selectors.get_user_tasks(request.user)
+    return render(
+        request,
+        "realtime_timer/partials/_task_list.html",
+        {"tasks": tasks, "focus_session": session, "toast_message": toast_message},
+    )
