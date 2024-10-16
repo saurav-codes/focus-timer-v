@@ -121,6 +121,91 @@
   .btn i {
     font-size: 0.7rem;
   }
+  .zen-mode-toggle {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 1000;
+  }
+
+  .zen-mode-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .zen-mode-toggle i {
+    color: #fff;
+    font-size: 1.2rem;
+  }
+
+  .zen-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+  }
+
+  .zen-mode .timer-display {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .zen-mode #zen-current-cycle {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .zen-mode .timer-display {
+      font-size: 8rem;
+    }
+
+    .zen-mode #zen-current-cycle {
+      font-size: 1.5rem;
+    }
+  }
+
+  .zen-mode-controls {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .zen-mode-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .zen-mode-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .zen-mode-btn i {
+    color: #fff;
+    font-size: 1.5rem;
+  }
 </style>
 <script src="{% static 'js/hack_timer.js' %}" defer></script>
 <script src="{% static 'js/hack_timer_worker.js' %}" defer></script>
@@ -219,6 +304,26 @@
     {% endif %}
 
     <div id="debug-mode" data-debug="{{ debug|lower }}" class="hidden"></div>
+
+    <button id="zenModeToggle" class="zen-mode-toggle fixed bottom-4 left-4 md:bottom-8 md:left-8">
+      <i class="fas fa-spa"></i>
+    </button>
+  </div>
+</div>
+
+<div id="zenMode" class="zen-mode hidden">
+  <button id="exitZenMode" class="zen-mode-toggle fixed top-4 right-4 md:top-8 md:right-8">
+    <i class="fas fa-times"></i>
+  </button>
+  <div class="timer-display" id="zen-remaining-time"></div>
+  <div id="zen-current-cycle"></div>
+  <div class="zen-mode-controls">
+    <button id="zenToggleTimer" class="zen-mode-btn">
+      <i id="zen-timer-toggle-icon" class="fas fa-play"></i>
+    </button>
+    <button id="zenSkipCycle" class="zen-mode-btn">
+      <i class="fas fa-forward"></i>
+    </button>
   </div>
 </div>
 
@@ -361,6 +466,34 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
+
+  const zenModeToggle = document.getElementById('zenModeToggle');
+  const zenMode = document.getElementById('zenMode');
+  const exitZenMode = document.getElementById('exitZenMode');
+  const zenToggleTimer = document.getElementById('zenToggleTimer');
+  const zenSkipCycle = document.getElementById('zenSkipCycle');
+
+  function toggleZenMode() {
+    zenMode.classList.toggle('hidden');
+    if (focusSessionManager) {
+      focusSessionManager.updateZenMode();
+    }
+  }
+
+  zenModeToggle.addEventListener('click', toggleZenMode);
+  exitZenMode.addEventListener('click', toggleZenMode);
+
+  zenToggleTimer.addEventListener('click', function() {
+    if (focusSessionManager) {
+      focusSessionManager.toggleTimer();
+    }
+  });
+
+  zenSkipCycle.addEventListener('click', function() {
+    if (focusSessionManager) {
+      focusSessionManager.skipCycle();
+    }
+  });
 });
 </script>
 {% endblock extra_body %}

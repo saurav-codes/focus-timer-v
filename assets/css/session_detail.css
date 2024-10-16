@@ -146,3 +146,91 @@
         font-size: 3rem;
     }
 }
+
+/* Add these styles at the end of the file */
+
+.zen-mode-toggle {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  z-index: 1000;
+}
+
+.zen-mode-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.zen-mode-toggle i {
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.zen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+}
+
+.zen-mode .timer-display {
+  font-size: 8rem;
+  margin-bottom: 1rem;
+}
+
+.zen-mode #zen-current-cycle {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.zen-mode-controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.zen-mode-btn {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.zen-mode-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.zen-mode-btn i {
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .zen-mode .timer-display {
+    font-size: 4rem;
+  }
+
+  .zen-mode #zen-current-cycle {
+    font-size: 1rem;
+  }
+}

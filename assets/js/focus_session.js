@@ -191,6 +191,7 @@ class FocusSessionManager {
       let formattedTime = this.formatTime(seconds);
       remainingTimeElement.textContent = `${formattedTime}`;
     }
+    this.updateZenMode();
   }
 
   updatePageTitleToCurrentCycle(seconds, current_cycle_type) {
@@ -240,6 +241,7 @@ class FocusSessionManager {
       timerToggleText.textContent = "Pause";
     }
     console.log("Updated timer toggle icon to play");
+    this.updateZenModeToggleIcon(true);
   }
 
   update_timer_toggle_icon_to_pause() {
@@ -254,6 +256,7 @@ class FocusSessionManager {
       timerToggleText.textContent = "Resume";
     }
     console.log("Updated timer toggle icon to pause");
+    this.updateZenModeToggleIcon(false);
   }
 
   update_session_followers_list(data) {
@@ -319,6 +322,27 @@ class FocusSessionManager {
     const finishTime = new Date(currentTime.getTime() + totalDuration * 1000);
     this.willFinishAt = finishTime.toISOString();
     this.updateFinishTime();
+  }
+
+  updateZenMode() {
+    const zenRemainingTime = document.getElementById('zen-remaining-time');
+    const zenCurrentCycle = document.getElementById('zen-current-cycle');
+    const remainingTime = document.getElementById('remaining-time');
+    const currentCycle = document.getElementById('current-cycle');
+
+    if (zenRemainingTime && remainingTime) {
+      zenRemainingTime.textContent = remainingTime.textContent;
+    }
+    if (zenCurrentCycle && currentCycle) {
+      zenCurrentCycle.textContent = currentCycle.textContent;
+    }
+  }
+
+  updateZenModeToggleIcon(isRunning) {
+    const zenTimerToggleIcon = document.getElementById('zen-timer-toggle-icon');
+    if (zenTimerToggleIcon) {
+      zenTimerToggleIcon.className = isRunning ? "fas fa-pause" : "fas fa-play";
+    }
   }
 
 }
