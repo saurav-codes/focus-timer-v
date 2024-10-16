@@ -407,3 +407,68 @@
 .toast.show {
   opacity: 1;
 }
+
+.followers-content ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.followers-content li {
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.followers-content li:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.focus-cycles-content ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.focus-cycles-content li {
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.focus-cycles-content li:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#stacked-cycles {
+  display: flex;
+  align-items: center;
+}
+
+#stacked-cycles span {
+  margin-left: -8px;
+  border: 2px solid #1a1a1a;
+}
+
+#stacked-cycles span:first-child {
+  margin-left: 0;
+}
+
+#focus-cycles-wrapper {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#focus-cycles-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+#focus-cycles-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+#focus-cycles-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}

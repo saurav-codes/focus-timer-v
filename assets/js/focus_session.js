@@ -214,18 +214,56 @@ class FocusSessionManager {
 
   update_focus_cycles_list(timerDisplayData) {
     const focusCyclesContent = document.getElementById('focus-cycles-content');
-    if (focusCyclesContent) {
-      let cyclesHtml = '';
+    const stackedCycles = document.getElementById('stacked-cycles');
+    if (focusCyclesContent && stackedCycles) {
+      let cyclesHtml = '<ul class="space-y-2">';
+      let stackedHtml = '';
+      let stackedCount = 0;
+      let additionalCycles = 0;
+
       Object.entries(timerDisplayData.focus_cycles).forEach(([order, cycle]) => {
-        const cycleStatus = cycle.is_completed ? '✅' : (cycle.order == timerDisplayData.current_cycle.order ? '👉' : 'ᛜ');
-        cyclesHtml += `<div class="cycle-item">${cycleStatus} Cycle ${order}: ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}</div>`;
+        const cycleStatus = cycle.is_completed ? '✅' : (cycle.order == timerDisplayData.current_cycle.order ? '👉' : '⏳');
+        const cycleIcon = this.getCycleIcon(cycle.type);
+
+        // Add all cycles to the expanded list
+        cyclesHtml += `
+          <li class="flex items-center space-x-3">
+            <span class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-700 rounded-full">${cycleIcon}</span>
+            <div>
+              <p class="text-sm font-medium">${cycleStatus} ${cycle.type} - ${this.formatTime(cycle.duration_seconds)}</p>
+            </div>
+          </li>
+        `;
+
+        // Add up to 5 cycles to the stacked view
+        if (stackedCount < 5 && !cycle.is_completed) {
+          stackedHtml += `<span class="w-6 h-6 flex items-center justify-center bg-gray-700 rounded-full text-xs">${cycleIcon}</span>`;
+          stackedCount++;
+        } else if (!cycle.is_completed) {
+          additionalCycles++;
+        }
       });
+
+      cyclesHtml += '</ul>';
       focusCyclesContent.innerHTML = cyclesHtml;
 
-      // Apply visibility after updating content
-      if (typeof applyFocusCyclesVisibility === 'function') {
-        applyFocusCyclesVisibility();
+      if (additionalCycles > 0) {
+        stackedHtml += `<span class="flex items-center justify-center w-6 h-6 text-xs font-medium text-white bg-gray-700 rounded-full">+${additionalCycles}</span>`;
       }
+      stackedCycles.innerHTML = stackedHtml;
+
+      console.log("Updated focus cycles list in UI");
+    }
+  }
+
+  getCycleIcon(cycleType) {
+    switch(cycleType.toLowerCase()) {
+      case 'focus':
+        return '🎯';
+      case 'break':
+        return '☕';
+      default:
+        return '⏳';
     }
   }
 
@@ -262,29 +300,42 @@ class FocusSessionManager {
   update_session_followers_list(data) {
     console.log("Updating session followers list", data);
     const followersContainer = document.getElementById('session-followers-container');
-    if (followersContainer) {
-      let guest_users = [];
-      let authenticated_users = [];
+    const stackedFollowers = document.getElementById('stacked-followers');
+    if (followersContainer && stackedFollowers) {
+      let allUsers = [];
 
       Object.entries(data.followers).forEach(([username, follower]) => {
         const joinedDate = new Date(follower.joined_at).toLocaleString();
-        const userType = follower.user_type;
-        const coloured_username = follower.coloured_username;
-        if (userType == "guest") {
-          guest_users.push({ username: username, joined_at: joinedDate, coloured_username: coloured_username });
-        } else {
-          authenticated_users.push({ username: username, joined_at: joinedDate, coloured_username: coloured_username });
-        }
+        allUsers.push({ username: username, joined_at: joinedDate });
       });
 
-      if (guest_users.length > 0 | authenticated_users.length > 0) {
-        followersContainer.innerHTML = '';
-        followersContainer.innerHTML += '<ul>';
-        _populate_session_followers_list(authenticated_users, followersContainer);
-        _populate_session_followers_list(guest_users, followersContainer);
-        followersContainer.innerHTML += '</ul>';
-        console.log("Updated session followers list in UI");
+      // Update expanded list view
+      followersContainer.innerHTML = '<ul class="space-y-2">';
+      allUsers.forEach(user => {
+        const avatar = generateAvatar(user.username);
+        followersContainer.innerHTML += `
+          <li class="flex items-center space-x-3">
+            <img class="w-8 h-8 rounded-full" src="${avatar}" alt="${user.username}">
+            <div>
+              <p class="text-sm font-medium">${user.username}</p>
+              <p class="text-xs text-gray-500">Joined at: ${user.joined_at}</p>
+            </div>
+          </li>
+        `;
+      });
+      followersContainer.innerHTML += '</ul>';
+
+      // Update stacked view
+      stackedFollowers.innerHTML = '';
+      allUsers.slice(0, 3).forEach(user => {
+        const avatar = generateAvatar(user.username);
+        stackedFollowers.innerHTML += `<img class="w-6 h-6 border-2 border-white rounded-full dark:border-gray-800" src="${avatar}" alt="${user.username}">`;
+      });
+      if (allUsers.length > 3) {
+        stackedFollowers.innerHTML += `<span class="flex items-center justify-center w-6 h-6 text-xs font-medium text-white bg-gray-700 border-2 border-white rounded-full">+${allUsers.length - 3}</span>`;
       }
+
+      console.log("Updated session followers list in UI");
     }
   }
 
@@ -345,16 +396,6 @@ class FocusSessionManager {
     }
   }
 
-}
-
-function _populate_session_followers_list(users, followersContainer) {
-  users.forEach(user => {
-    if (user.coloured_username == true) {
-      followersContainer.innerHTML += `<li class="text-green-500">${user.username} - Joined at: ${user.joined_at}</li>`;
-    } else {
-      followersContainer.innerHTML += `<li class="text-gray-500">${user.username} - Joined at: ${user.joined_at}</li>`;
-    }
-  });
 }
 
 // Initialize the FocusSessionManager when the page loads
@@ -457,4 +498,59 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+});
+
+// Add this function to generate a simple avatar based on username
+function generateAvatar(username) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 40;
+  canvas.height = 40;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = `hsl(${username.charCodeAt(0) * 10}, 70%, 50%)`;
+  ctx.fillRect(0, 0, 40, 40);
+  ctx.fillStyle = 'white';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(username.charAt(0).toUpperCase(), 20, 20);
+  return canvas.toDataURL();
+}
+
+// Update the toggleList function
+window.toggleList = function(listType) {
+  const content = document.getElementById(`${listType}-wrapper`) || document.getElementById(`session-followers-container`);
+  const toggle = document.querySelector(`.${listType}-toggle`);
+  content.classList.toggle('expanded');
+  toggle.classList.toggle('expanded');
+
+  localStorage.setItem(`${listType}-expanded`, content.classList.contains('expanded'));
+
+  if (listType === 'focus-cycles') {
+    applyFocusCyclesVisibility();
+  } else {
+    applyFollowersVisibility();
+  }
+}
+
+// Update the applyFollowersVisibility function
+function applyFollowersVisibility() {
+  const followersContent = document.getElementById('session-followers-container');
+  const isExpanded = localStorage.getItem('followers-expanded') === 'true';
+
+  if (followersContent) {
+    if (isExpanded) {
+      followersContent.style.maxHeight = '500px';
+      followersContent.style.overflow = 'auto';
+      followersContent.classList.add('expanded');
+    } else {
+      followersContent.style.maxHeight = '0';
+      followersContent.style.overflow = 'hidden';
+      followersContent.classList.remove('expanded');
+    }
+  }
+}
+
+// Call applyFollowersVisibility on page load
+document.addEventListener('DOMContentLoaded', function() {
+  applyFollowersVisibility();
 });

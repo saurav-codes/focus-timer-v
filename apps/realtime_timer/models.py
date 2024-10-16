@@ -147,3 +147,4 @@ class FocusSessionFollower(models.Model):
 
     class Meta:
         unique_together = ("session", "username")
+        ordering = ["joined_at"]

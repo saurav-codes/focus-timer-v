@@ -332,7 +332,12 @@
 
     <div id="focus-cycles-list" class="focus-cycles-list">
       <div class="focus-cycles-header" onclick="toggleList('focus-cycles')">
-        <span>Focus Cycles</span>
+        <div class="flex items-center">
+          <span>Focus Cycles</span>
+          <div id="stacked-cycles" class="flex -space-x-2 rtl:space-x-reverse ml-2">
+            <!-- Stacked cycles will be populated here by JavaScript -->
+          </div>
+        </div>
         <i class="fa-solid fa-angles-down focus-cycles-toggle"></i>
       </div>
       <div id="focus-cycles-wrapper" class="focus-cycles-content">
@@ -348,7 +353,12 @@
 
     <div id="followers-list" class="followers-list">
       <div class="followers-header" onclick="toggleList('followers')">
-        <span>Followers</span>
+        <div class="flex items-center">
+          <span>Followers</span>
+          <div id="stacked-followers" class="flex -space-x-2 rtl:space-x-reverse ml-2">
+            <!-- Stacked followers will be populated here by JavaScript -->
+          </div>
+        </div>
         <i class="fa-solid fa-angles-down followers-toggle"></i>
       </div>
       <div id="session-followers-container" class="followers-content">
