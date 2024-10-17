@@ -1,51 +1,46 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
-{% endblock extra_head %}
-
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-8">Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-8 text-center text-dark-100">Dashboard</h1>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <i class="fas fa-clock stat-icon"></i>
-            <h3>Total Focus Time</h3>
-            <p>{{ total_focus_time }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-dark-700 rounded-lg shadow-md p-6 text-center">
+            <i class="fas fa-clock text-4xl text-blue-500 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2 text-dark-200">Total Focus Time</h3>
+            <p class="text-2xl font-bold text-dark-100">{{ total_focus_time }}</p>
         </div>
-        <div class="stat-card">
-            <i class="fas fa-calendar-check stat-icon"></i>
-            <h3>Total Sessions</h3>
-            <p>{{ total_sessions }}</p>
+        <div class="bg-dark-700 rounded-lg shadow-md p-6 text-center">
+            <i class="fas fa-calendar-check text-4xl text-green-500 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2 text-dark-200">Total Sessions</h3>
+            <p class="text-2xl font-bold text-dark-100">{{ total_sessions }}</p>
         </div>
-        <div class="stat-card">
-            <i class="fas fa-hourglass-half stat-icon"></i>
-            <h3>Avg. Session Length</h3>
-            <p>{{ avg_session_length }}</p>
+        <div class="bg-dark-700 rounded-lg shadow-md p-6 text-center">
+            <i class="fas fa-hourglass-half text-4xl text-yellow-500 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2 text-dark-200">Avg. Session Length</h3>
+            <p class="text-2xl font-bold text-dark-100">{{ avg_session_length }}</p>
         </div>
     </div>
 
-
-    <div class="recent-sessions">
-        <h3><i class="fas fa-history"></i> Recent Sessions</h3>
-        <ul>
+    <div class="bg-dark-700 rounded-lg shadow-md p-6 mb-8">
+        <h3 class="text-2xl font-semibold mb-4 text-dark-100"><i class="fas fa-history mr-2"></i>Recent Sessions</h3>
+        <ul class="space-y-2">
             {% for session in recent_sessions %}
-            <li>
-                <a href="{{ session.get_absolute_url }}">
-                    <i class="fas fa-play-circle"></i> {{ session.label }} - {{ session.created_at|date:"M d, Y" }}
+            <li class="hover:bg-dark-600 rounded-lg transition-colors duration-200">
+                <a href="{{ session.get_absolute_url }}" class="block p-3 text-dark-200 hover:text-dark-100">
+                    <i class="fas fa-play-circle mr-2"></i>{{ session.label }} - {{ session.created_at|date:"M d, Y" }}
                 </a>
             </li>
             {% empty %}
-            <li><i class="fas fa-exclamation-circle"></i> No recent sessions</li>
+            <li class="text-dark-300 p-3"><i class="fas fa-exclamation-circle mr-2"></i>No recent sessions</li>
             {% endfor %}
         </ul>
     </div>
 
     <!-- Task Management Section -->
-    <div class="mt-12 bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-2xl font-semibold mb-4">Task Management</h2>
+    <div class="bg-dark-700 rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold mb-4 text-dark-100">Task Management</h2>
         <div id="taskList" class="space-y-4">
             {% include "realtime_timer/partials/_task_list.html" with tasks=tasks %}
         </div>
