@@ -11,7 +11,7 @@ from datetime import timedelta
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusPeriod, FocusSession
+from apps.realtime_timer.models import FocusPeriod, FocusSession, Task
 from .business_logic import selectors, techniques
 from .forms import FocusSessionForm
 from django_htmx.http import HttpResponseClientRedirect
@@ -157,6 +157,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         # Get recent sessions
         recent_sessions = user_sessions.order_by("-created_at")[:5]
+
+        # Add tasks to the context
+        context["tasks"] = Task.objects.filter(user=user)
 
         context.update(
             {

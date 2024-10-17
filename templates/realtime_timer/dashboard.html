@@ -7,8 +7,8 @@
 {% endblock extra_head %}
 
 {% block content %}
-<div class="dashboard-container">
-    <h1 class="dashboard-title text-2xl font-bold text-blue-300"><i class="fas fa-chart-line"></i> Focus Session Dashboard</h1>
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Dashboard</h1>
 
     <div class="stats-grid">
         <div class="stat-card">
@@ -53,8 +53,22 @@
             {% endfor %}
         </ul>
     </div>
+
+    <!-- Task Management Section -->
+    <div class="mt-12 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-semibold mb-4">Task Management</h2>
+        <div id="taskList" class="space-y-4">
+            {% include "realtime_timer/partials/_task_list.html" with tasks=tasks %}
+        </div>
+    </div>
 </div>
 
+<!-- Toast container -->
+<div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+{% endblock content %}
+
+{% block extra_js %}
 <script>
     // Daily Focus Time Chart
     var dailyFocusCtx = document.getElementById('dailyFocusChart').getContext('2d');
@@ -118,5 +132,75 @@
             }
         }
     });
+
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800 transition-opacity duration-300 ease-in-out opacity-0`;
+        toast.setAttribute('role', 'alert');
+
+        let iconColor, bgColor, icon;
+        switch (type) {
+            case 'success':
+                iconColor = 'text-green-500';
+                bgColor = 'bg-green-100';
+                icon = `<path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>`;
+                break;
+            // Add cases for 'danger' and 'warning' if needed
+        }
+
+        toast.innerHTML = `
+            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 ${iconColor} ${bgColor} rounded-lg dark:bg-green-800 dark:text-green-200">
+                <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                    ${icon}
+                </svg>
+                <span class="sr-only">Check icon</span>
+            </div>
+            <div class="ms-3 text-sm font-normal">${message}</div>
+            <button type="button" class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" aria-label="Close">
+                <span class="sr-only">Close</span>
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+            </button>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Fade in
+        setTimeout(() => {
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+        }, 10);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, 3000);
+
+        // Close button functionality
+        const closeButton = toast.querySelector('button');
+        closeButton.addEventListener('click', () => {
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        });
+    }
+
+    // Show toast messages after HTMX swaps
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'taskList') {
+            const toastMessage = event.detail.xhr.getResponseHeader('HX-Trigger');
+            if (toastMessage) {
+                showToast(JSON.parse(toastMessage).showMessage);
+            }
+        }
+    });
 </script>
-{% endblock content %}
+{% endblock extra_js %}
