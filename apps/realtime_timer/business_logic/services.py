@@ -5,9 +5,10 @@ from django.http import HttpRequest, HttpResponse
 from apps.realtime_timer.business_logic import selectors
 from apps.realtime_timer.business_logic.onesignal import send_onesignal_notification
 
-from ..models import FocusPeriod, FocusSession, FocusCycle, FocusSessionFollower
+from ..models import FocusPeriod, FocusSession, FocusCycle, FocusSessionFollower, User
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from channels.db import database_sync_to_async
 from django.db import transaction
 from channels.layers import get_channel_layer
@@ -74,8 +75,10 @@ def create_focus_cycles_and_session(
         logger.info(f"{owner.username} Set first cycle as current cycle for session ID: {focus_session.session_id}")
 
     # create first focus period because the focus session is started.
-    FocusPeriod.objects.create(session=focus_session, cycle=first_cycle)
-    logger.info(f"{owner.username} Created first focus period for session ID: {focus_session.session_id}")
+    FocusPeriod.objects.create(session=focus_session, cycle=first_cycle, user=owner)
+    logger.info(
+        f"{owner.username} Created first focus period for session ID: {focus_session.session_id} and user - {owner}"
+    )
     return focus_session
 
 
@@ -128,11 +131,21 @@ class AsyncTimerService:
 
     @database_sync_to_async
     def create_new_focus_period(self, session: FocusSession, current_cycle: FocusCycle):
-        with transaction.atomic():
-            FocusPeriod.objects.create(session=session, cycle=current_cycle)
-            logger.info(
-                f"{self.user.username} Created new focus period for session ID: {session.session_id}, cycle ID: {current_cycle.pk}"
-            )
+        try:
+            with transaction.atomic():
+                logger.info(f"Starting create_new_focus_period for session {session.session_id}")
+                logger.info(f"User: {self.user}, Username: {self.user.username}")
+
+                new_period = FocusPeriod.objects.create(session=session, cycle=current_cycle, user=self.user)
+
+                logger.info(f"Created new focus period: {new_period.id}")
+                logger.info(
+                    f"{self.user.username} Created new focus period for session ID: {session.session_id}, cycle ID: {current_cycle.pk} and user - {self.user}"
+                )
+
+            logger.info("Finished create_new_focus_period successfully")
+        except Exception as e:
+            logger.error(f"Error in create_new_focus_period: {str(e)}", exc_info=True)
 
     async def save_last_focus_period(self, current_session: FocusSession):
         """
@@ -187,6 +200,7 @@ class AsyncTimerService:
         logger.info(f"{self.user.username} Stopping timer for session ID: {self.session_id}")
         await self.pause_timer(trigger_sync_timer=False)  # make sure the last focus period is ended
         session = await selectors.get_session_by_id_locked_async(self.session_id)
+        await self.create_focus_periods_for_participants(session)
         session.total_focus_completed = await selectors.calculate_total_focus_completed_async(session)
         session.timer_state = FocusSession.TIMER_COMPLETED
         # syncing the timer after saving is neccessary so no choice here
@@ -355,6 +369,32 @@ class AsyncTimerService:
             # since there is no next cycle, we will stop the timer
             await self.stop_timer()
             return False
+
+    @database_sync_to_async
+    def create_focus_periods_for_participants(self, session: FocusSession):
+        logger.info(f"Creating focus periods for participants in session '{session.session_id}'")
+        for user_id, periods in session.participant_data.items():
+            user = User.objects.get(id=user_id)
+            for period in periods:
+                start_time = parse_datetime(period["join_at"])
+                end_time = parse_datetime(period["leave_at"]) if period["leave_at"] else timezone.now()
+                if start_time and end_time:
+                    FocusPeriod.objects.create(
+                        session=session,
+                        user=user,
+                        started_at=start_time,
+                        ended_at=end_time,
+                        duration=end_time - start_time,
+                        cycle=session.current_cycle,  # this is just for avoid null error.. putting cycle here have no use
+                    )
+                    logger.info(
+                        f"Created focus period for user '{user.username}' in session '{session.session_id}' as a participant"
+                    )
+                else:
+                    logger.warning(
+                        f"Invalid focus period data for user '{user.username}' in session '{session.session_id}': {period}"
+                    )
+        logger.info(f"finished creating focus periods for participants in session '{session.session_id}'")
 
 
 async def trigger_sync_timer_for_all_connected_clients(session_id: str):

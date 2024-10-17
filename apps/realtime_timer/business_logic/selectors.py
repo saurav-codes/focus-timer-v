@@ -121,8 +121,10 @@ def calculate_total_focus_completed_async(session: FocusSession):
     # because the last resumed time will be None if the user started the session
     # and it will contain value if the user resumed the session
     # only call this method once the session is completed
-    total_focused_time_qs = session.focus_periods.values("duration").aggregate(  # type:ignore
-        total_time_focused=Sum("duration")
+    total_focused_time_qs = (
+        session.focus_periods.filter(ended_at__isnull=False, user=session.owner)  # type: ignore
+        .values("duration")
+        .aggregate(total_time_focused=Sum("duration"))
     )
     total_focused_time = total_focused_time_qs["total_time_focused"] or timezone.timedelta(0)
     return total_focused_time
@@ -217,3 +219,8 @@ def get_session_will_finish_at_async(*, session: FocusSession):
 
 def get_user_tasks(user):
     return Task.objects.filter(user=user)
+
+
+def get_total_time_to_focus(session: FocusSession):
+    total_duration_dict = session.focus_cycles.aggregate(total_duration=Sum("duration"))  # type: ignore
+    return total_duration_dict["total_duration"] or timezone.timedelta(0)

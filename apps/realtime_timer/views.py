@@ -11,7 +11,7 @@ from datetime import timedelta
 from asgiref.sync import async_to_sync
 import logging
 
-from apps.realtime_timer.models import FocusSession, Task
+from apps.realtime_timer.models import FocusPeriod, FocusSession
 from .business_logic import selectors, techniques
 from .forms import FocusSessionForm
 from django_htmx.http import HttpResponseClientRedirect
@@ -127,7 +127,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user_sessions = FocusSession.objects.filter(owner=user)
 
         # Calculate overall statistics
-        total_focus_time = user_sessions.aggregate(total=Sum("total_focus_completed"))["total"] or timedelta()
+        # total_focus_time = user_sessions.aggregate(total=Sum("total_focus_completed"))["total"] or timedelta()
+        total_focus_time = (
+            FocusPeriod.objects.filter(user=user, ended_at__isnull=False).aggregate(total=Sum("duration"))["total"]
+            or timedelta()
+        )
 
         total_sessions = user_sessions.count()
         avg_session_length = user_sessions.aggregate(avg=Avg("total_focus_completed"))["avg"] or timedelta()

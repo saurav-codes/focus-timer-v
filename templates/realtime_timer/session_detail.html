@@ -404,7 +404,7 @@
           <!-- Modal body -->
           <div class="p-4 md:p-5 space-y-4 max-h-[60vh] overflow-y-auto">
             <div id="taskList">
-              {% if is_session_owner %}
+              {% if request.user.is_authenticated %}
                 {% include "realtime_timer/partials/_task_list.html" with tasks=tasks focus_session=focus_session %}
               {% else %}
                 <p class="text-white">You need to <a href="{% url 'account_login' %}?next={{ request.path }}" class="text-blue-400 hover:underline">login</a> to create and manage tasks.</p>

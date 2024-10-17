@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from timezone_field import TimeZoneField
 import logging
+from django.utils.dateparse import parse_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +46,10 @@ class FocusSession(models.Model):
     current_cycle = models.ForeignKey(
         "FocusCycle", on_delete=models.CASCADE, default=None, null=True, blank=True, related_name="current_cycle"
     )
-    # saving a instance means that the timer has started
-    timer_started_at = models.DateTimeField(auto_now_add=True)
     # total time spent focusing
     total_focus_completed = models.DurationField(default=timezone.timedelta)
     timer_state = models.CharField(choices=TIMER_STATE_CHOICES, default=TIMER_RUNNING, max_length=9)
-    tasks = models.ManyToManyField("Task", related_name="sessions", blank=True)
+    participant_data = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -77,6 +76,32 @@ class FocusSession(models.Model):
     def label(self):
         return f"Session {self.session_id}"
 
+    def add_participant(self, user):
+        if str(user.id) not in self.participant_data:
+            self.participant_data[str(user.id)] = []
+        self.participant_data[str(user.id)].append(
+            {
+                "join_at": timezone.now().isoformat(),
+                "leave_at": None,
+            }
+        )
+        self.save()
+
+    def update_participant_leave(self, user):
+        if str(user.id) in self.participant_data:
+            self.participant_data[str(user.id)][-1]["leave_at"] = timezone.now().isoformat()
+            self.save()
+
+    def get_participant_focus_time(self, user):
+        total_focus_time = timezone.timedelta()
+        if str(user.id) in self.participant_data:
+            for period in self.participant_data[str(user.id)]:
+                join_at = parse_datetime(period["join_at"])
+                leave_at = parse_datetime(period["leave_at"])
+                if join_at and leave_at:
+                    total_focus_time += leave_at - join_at
+        return total_focus_time
+
 
 class FocusPeriod(models.Model):
     """
@@ -92,6 +117,7 @@ class FocusPeriod(models.Model):
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(default=timezone.timedelta)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="focus_periods", null=True, blank=True)
 
     def __str__(self):
         return f"Focus Period {self.pk} for {self.session.session_id}"
@@ -125,7 +151,6 @@ class FocusCycle(models.Model):
 
 class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")
-    session = models.ForeignKey(FocusSession, on_delete=models.CASCADE, related_name="session_tasks")
     description = models.CharField(max_length=255)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

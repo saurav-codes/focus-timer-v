@@ -64,7 +64,7 @@
 </style>
 
 <div hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' id="taskList" class="task-list">
-  <form hx-post="{% url 'realtime_timer:create_task' session_id=focus_session.session_id %}"
+  <form hx-post="{% url 'realtime_timer:create_task' %}"
         hx-target="#taskList"
         hx-swap="outerHTML"
         hx-trigger="submit, taskAdded from:body"

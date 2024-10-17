@@ -2,6 +2,7 @@
 from django.contrib import admin
 
 from .models import User, FocusSession, FocusPeriod, FocusCycle, Task, FocusSessionFollower
+from .business_logic.selectors import get_total_time_to_focus
 
 
 @admin.register(User)
@@ -37,18 +38,20 @@ class FocusSessionAdmin(admin.ModelAdmin):
         "session_id",
         "owner",
         "created_at",
-        "current_cycle",
-        "timer_started_at",
         "total_focus_completed",
+        "total_time_to_focus",
         "timer_state",
     )
     list_filter = (
         "owner",
         "created_at",
         "current_cycle",
-        "timer_started_at",
     )
     date_hierarchy = "created_at"
+    readonly_fields = ("total_time_to_focus",)
+
+    def total_time_to_focus(self, obj):
+        return get_total_time_to_focus(obj)
 
 
 @admin.register(FocusPeriod)
@@ -60,8 +63,9 @@ class FocusPeriodAdmin(admin.ModelAdmin):
         "started_at",
         "ended_at",
         "duration",
+        "user",
     )
-    list_filter = ("started_at", "ended_at")
+    list_filter = ("started_at", "ended_at", "user")
     raw_id_fields = ("session", "cycle")
 
 
@@ -84,7 +88,6 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
-        "session",
         "description",
         "is_completed",
         "created_at",
@@ -92,7 +95,6 @@ class TaskAdmin(admin.ModelAdmin):
     )
     list_filter = (
         "user",
-        "session",
         "is_completed",
         "created_at",
         "updated_at",

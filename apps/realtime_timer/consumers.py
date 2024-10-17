@@ -9,6 +9,7 @@ from .utils import generate_request_metadata
 from .models import FocusSession
 import redis.asyncio as aioredis
 from django.conf import settings
+from channels.db import database_sync_to_async
 
 from .utils import check_session_owner_async
 
@@ -41,6 +42,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         # Send OneSignal tag for this session
         await self.send(text_data=json.dumps({"type": "onesignal_tag", "session_id": self.session_id}))
 
+        await self.add_participant(self.scope["user"])
+
     async def disconnect(self, close_code):
         # websocket is disconnect for whatever reasons
         # so we will save the session
@@ -71,6 +74,8 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(self.session_group_name, self.channel_name)  # type: ignore
         # also cancel any scheduled cycle change
         await self.timer_service.cancel_scheduled_cycle_change_if_timer_stopped(self.redis_client, self.session_id)
+
+        await self.update_participant_leave(self.scope["user"])
 
     async def receive(self, text_data):
         """
@@ -220,3 +225,25 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         cycle_changed = await self.timer_service._transition_to_next_cycle()
         if cycle_changed:
             await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
+
+    @database_sync_to_async
+    def add_participant(self, user):
+        session = FocusSession.objects.get(session_id=self.session_id)
+        if not user.is_anonymous and user != session.owner:
+            logger.info(f"Adding participant {user.username} to session {self.session_id}")
+            session.add_participant(user)
+        else:
+            logger.info(
+                f"User {user.username} is not authenticated or is the owner. So not adding to session {self.session_id}"
+            )
+
+    @database_sync_to_async
+    def update_participant_leave(self, user):
+        session = FocusSession.objects.get(session_id=self.session_id)
+        if not user.is_anonymous and user != session.owner:
+            logger.info(f"Updating participant leave for {user.username} in session {self.session_id}")
+            session.update_participant_leave(user)
+        else:
+            logger.info(
+                f"User {user.username} is not authenticated or is the owner. So not updating participant leave for session {self.session_id}"
+            )

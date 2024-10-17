@@ -18,7 +18,7 @@ urlpatterns = [
 ]
 
 htmx_urlpatterns = [
-    path("task/create/<uuid:session_id>/", htmx_views.create_task, name="create_task"),
+    path("task/create/", htmx_views.create_task, name="create_task"),
     path("task/<int:task_id>/toggle/", htmx_views.toggle_task, name="toggle_task"),
     path(
         "temporary-focus-cycles-generator/",
