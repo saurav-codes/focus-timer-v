@@ -224,3 +224,42 @@ def get_user_tasks(user):
 def get_total_time_to_focus(session: FocusSession):
     total_duration_dict = session.focus_cycles.aggregate(total_duration=Sum("duration"))  # type: ignore
     return total_duration_dict["total_duration"] or timezone.timedelta(0)
+
+
+def get_dashboard_data_for_user(user):
+    context = {}
+    # since a user can also attend another user's session so save his focus data
+    # in focus periods table, this way we can easily get all sessions from focus periods
+    user_fp = FocusPeriod.objects.filter(user=user, ended_at__isnull=False)
+
+    sessions_ids = user_fp.values_list("session_id", flat=True).distinct()
+    user_sessions = FocusSession.objects.filter(session_id__in=sessions_ids)
+    total_sessions = user_sessions.count()
+
+    total_focus_time = user_fp.aggregate(total=Sum("duration"))["total"] or timezone.timedelta()
+    total_focus_time_minutes = total_focus_time.total_seconds() / 60
+    total_focus_time_label = ""
+    if total_focus_time_minutes >= 60:
+        total_focus_time_label = f"{total_focus_time_minutes / 60:.1f} hours"
+    else:
+        total_focus_time_label = f"{round(total_focus_time_minutes)} minutes"
+
+    avg_session_length = total_focus_time.total_seconds() / total_sessions if total_sessions > 0 else 0
+    avg_session_length_minutes = f"{round(avg_session_length / 60)} minutes"
+
+    # Get recent sessions
+    recent_sessions = user_sessions.order_by("-created_at")[:5]
+
+    # Add tasks to the context
+    context["tasks"] = get_user_tasks(user)
+
+    context.update(
+        {
+            "total_focus_time": total_focus_time_label,
+            "total_sessions": total_sessions,
+            "avg_session_length": avg_session_length_minutes,
+            "recent_sessions": recent_sessions,
+        }
+    )
+
+    return context

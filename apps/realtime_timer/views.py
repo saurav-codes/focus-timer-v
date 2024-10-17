@@ -121,57 +121,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
-
-        # Get user's sessions
-        user_sessions = FocusSession.objects.filter(owner=user)
-
-        # Calculate overall statistics
-        # total_focus_time = user_sessions.aggregate(total=Sum("total_focus_completed"))["total"] or timedelta()
-        total_focus_time = (
-            FocusPeriod.objects.filter(user=user, ended_at__isnull=False).aggregate(total=Sum("duration"))["total"]
-            or timedelta()
-        )
-
-        total_sessions = user_sessions.count()
-        avg_session_length = user_sessions.aggregate(avg=Avg("total_focus_completed"))["avg"] or timedelta()
-
-        # Get data for charts
-        last_30_days = timezone.now() - timedelta(days=30)
-        daily_focus_time = (
-            user_sessions.filter(created_at__gte=last_30_days)
-            .values("created_at__date")
-            .annotate(total=Sum("total_focus_completed"))
-            .order_by("created_at__date")
-        )
-
-        # Convert timedelta to minutes for easier charting
-        daily_focus_time = [
-            {"date": item["created_at__date"], "total": item["total"].total_seconds() / 60 if item["total"] else 0}
-            for item in daily_focus_time
-        ]
-
-        technique_distribution = (
-            user_sessions.values("technique").annotate(count=Count("session_id")).order_by("-count")
-        )
-
-        # Get recent sessions
-        recent_sessions = user_sessions.order_by("-created_at")[:5]
-
-        # Add tasks to the context
-        context["tasks"] = Task.objects.filter(user=user)
-
-        context.update(
-            {
-                "total_focus_time": total_focus_time,
-                "total_sessions": total_sessions,
-                "avg_session_length": avg_session_length,
-                "daily_focus_time": daily_focus_time,
-                "technique_distribution": list(technique_distribution),
-                "recent_sessions": recent_sessions,
-            }
-        )
-
+        dashboard_data = selectors.get_dashboard_data_for_user(self.request.user)
+        context.update(dashboard_data)
         return context
 
 

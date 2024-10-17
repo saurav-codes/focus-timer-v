@@ -74,7 +74,7 @@ class FocusSession(models.Model):
 
     @property
     def label(self):
-        return f"Session {self.session_id}"
+        return f"{self.owner.username}'s Session {str(self.session_id).split('-')[0]}..."
 
     def add_participant(self, user):
         if str(user.id) not in self.participant_data:
