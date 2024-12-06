@@ -76,10 +76,10 @@ main() {
     run_django_command "collectstatic" "--no-input"
 
     # Ask user if they want to run migrations
-    read -p "Do you want to run migrations? (y/n): " run_migrations
-    if [[ $run_migrations =~ ^[Yy]$ ]]; then
-        run_django_command "migrate"
-    fi
+    # read -p "Do you want to run migrations? (y/n): " run_migrations
+    # if [[ $run_migrations =~ ^[Yy]$ ]]; then
+    #     run_django_command "migrate"
+    # fi
 
     echo "Setting correct permissions for static files..."
     sudo chown -R $USER:www-data "$focus_timer_dir/production_static_files"
