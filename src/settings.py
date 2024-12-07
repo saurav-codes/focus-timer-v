@@ -280,9 +280,23 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "apps.realtime_timer.management.commands.backup_database": {
+            "handlers": ['console', 'file'],
+            "level": 'INFO',
+            "propagate": False,
+        },
     },
 }
 
 
 ONESIGNAL_APP_ID = os.environ.get("ONESIGNAL_APP_ID")
 ONESIGNAL_REST_API_KEY = os.environ.get("ONESIGNAL_REST_API_KEY")
+
+# SQLite backup settings
+SQLITE_BACKUP = {
+    'BACKUP_DIRECTORY': os.path.join(BASE_DIR, 'backups'),
+    'BACKUP_MAX_COUNT': 10,  # Maximum number of backups to keep
+}
+
+GIT_USER_NAME = os.environ.get('GIT_USER_NAME')
+GIT_USER_EMAIL = os.environ.get('GIT_USER_EMAIL')
