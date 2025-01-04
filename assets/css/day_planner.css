@@ -1,0 +1,56 @@
+.planner-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.input-container {
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.task-input {
+    width: 100%;
+    padding: 8px;
+    padding-right: 100px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.task-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, .25);
+}
+
+.hint {
+    color: #666;
+    font-size: 12px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.enter-key {
+    background: #f1f1f1;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    font-family: monospace;
+}
+
+.input-hint {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 12px;
+    pointer-events: none;
+}
+
+input {
+    color: black;
+}

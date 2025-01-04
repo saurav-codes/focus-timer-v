@@ -1,0 +1,166 @@
+
+<!-- Profile Form -->
+<div id="profile-form" class="bg-white shadow-sm rounded-lg">
+    <div class="p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-6">Profile Settings</h2>
+        
+        <form method="post" class="space-y-6" 
+            hx-target="#profile-form" 
+            hx-post="{% url 'realtime_timer:profile_update' %}" 
+            hx-swap="outerHTML"
+            hx-indicator="#loading-indicator">
+            {% csrf_token %}
+            
+            <!-- Bio -->
+            <div>
+                <label for="bio" class="block text-sm font-medium text-gray-700 mb-2">About You</label>
+                <div class="relative">
+                    <textarea id="bio" name="bio" rows="4" 
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm {% if form.bio.errors %}border-red-300{% endif %}"
+                        placeholder="Tell us about yourself, your work style, and preferences..."
+                        maxlength="1000"
+                        oninput="updateCharCount(this, 1000)">{{ form.bio.value|default:user.bio }}</textarea>
+                    <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                        <span id="bio-count">0</span>/1000 characters
+                    </div>
+                </div>
+                {% if form.bio.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.bio.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Long Term Goals -->
+            <div>
+                <label for="long_term_goals" class="block text-sm font-medium text-gray-700 mb-2">
+                    Long Term Goals
+                    <span class="text-xs text-gray-500 font-normal ml-1">(next 6-12 months)</span>
+                </label>
+                <div class="relative">
+                    <textarea id="long_term_goals" name="long_term_goals" rows="3" 
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm {% if form.long_term_goals.errors %}border-red-300{% endif %}"
+                        placeholder="What do you want to achieve in the next 6-12 months?"
+                        maxlength="1000"
+                        oninput="updateCharCount(this, 1000)">{{ form.long_term_goals.value|default:user.long_term_goals }}</textarea>
+                    <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                        <span id="long_term_goals-count">0</span>/1000 characters
+                    </div>
+                </div>
+                {% if form.long_term_goals.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.long_term_goals.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Short Term Goals -->
+            <div>
+                <label for="short_term_goals" class="block text-sm font-medium text-gray-700 mb-2">
+                    Short Term Goals
+                    <span class="text-xs text-gray-500 font-normal ml-1">(next 1-3 months)</span>
+                </label>
+                <div class="relative">
+                    <textarea id="short_term_goals" name="short_term_goals" rows="3" 
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm {% if form.short_term_goals.errors %}border-red-300{% endif %}"
+                        placeholder="What do you want to achieve in the next 1-3 months?"
+                        maxlength="1000"
+                        oninput="updateCharCount(this, 1000)">{{ form.short_term_goals.value|default:user.short_term_goals }}</textarea>
+                    <div class="absolute bottom-2 right-2 text-xs text-gray-400">
+                        <span id="short_term_goals-count">0</span>/1000 characters
+                    </div>
+                </div>
+                {% if form.short_term_goals.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.short_term_goals.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Timezone -->
+            <div>
+                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                <select id="timezone" name="timezone" 
+                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm {% if form.timezone.errors %}border-red-300{% endif %}">
+                    {% for tz in timezones %}
+                    <option value="{{ tz }}" {% if tz == form.timezone.value|default:user.timezone|stringformat:"s" %}selected{% endif %}>{{ tz }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.timezone.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.timezone.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    hx-disabled-elt="this">
+                    <span>Save Changes</span>
+                    <div id="loading-indicator" class="htmx-indicator ml-2">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                    </div>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="border-t border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Focus Stats</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="text-sm font-medium text-gray-500">Total Focus Time</div>
+                <div class="mt-1 text-2xl font-semibold text-gray-900">{{ total_focus_time }}</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="text-sm font-medium text-gray-500">Focus Sessions</div>
+                <div class="mt-1 text-2xl font-semibold text-gray-900">{{ total_sessions }}</div>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="text-sm font-medium text-gray-500">Tasks Completed</div>
+                <div class="mt-1 text-2xl font-semibold text-gray-900">{{ tasks_completed }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast-success" 
+    class="fixed top-4 right-4 flex items-center p-4 mb-4 text-gray-500 bg-white rounded-lg shadow-lg dark:text-gray-400 dark:bg-gray-800 transform transition-all duration-300 translate-x-full"
+    role="alert">
+    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z"/>
+        </svg>
+        <span class="sr-only">Success icon</span>
+    </div>
+    <div class="ms-3 text-sm font-normal">Profile updated successfully!</div>
+    <button type="button" 
+        class="ms-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" 
+        >
+        <span class="sr-only">Close</span>
+        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+    function updateCharCount(textarea, maxLength) {
+        const countElement = document.getElementById(`${textarea.id}-count`);
+        const currentLength = textarea.value.length;
+        countElement.textContent = currentLength;
+        
+        // Update color based on length
+        if (currentLength >= maxLength) {
+            countElement.classList.add('text-red-500');
+            countElement.classList.remove('text-gray-400');
+        } else {
+            countElement.classList.add('text-gray-400');
+            countElement.classList.remove('text-red-500');
+        }
+    }
+
+    // Initialize character counts on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const textareas = ['bio', 'long_term_goals', 'short_term_goals'];
+        textareas.forEach(id => {
+            const textarea = document.getElementById(id);
+            updateCharCount(textarea, textarea.maxLength);
+        });
+    });
+</script>

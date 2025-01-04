@@ -15,6 +15,8 @@ urlpatterns = [
     path("session/<uuid:session_id>/", views.SessionDetailView.as_view(), name="session-detail-view"),
     path("dashboard/", views.DashboardView.as_view(), name="dashboard-view"),
     path("get-technique-info/", views.get_technique_info, name="get-technique-info"),
+    path("profile/", views.ProfileView.as_view(), name="profile"),
+    path("profile/update/", views.ProfileUpdateView.as_view(), name="profile_update"),
 ]
 
 htmx_urlpatterns = [

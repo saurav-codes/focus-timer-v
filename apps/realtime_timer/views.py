@@ -13,11 +13,11 @@ import logging
 
 from apps.realtime_timer.models import FocusPeriod, FocusSession, Task
 from .business_logic import selectors, techniques
-from .forms import FocusSessionForm
+from .forms import FocusSessionForm, ProfileForm
 from django_htmx.http import HttpResponseClientRedirect
 
 from django.conf import settings
-
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +124,53 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         dashboard_data = selectors.get_dashboard_data_for_user(self.request.user)
         context.update(dashboard_data)
         return context
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    """View for displaying and updating user profile."""
+    template_name = "profile/profile.html"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        
+        # Get user stats
+        user = self.request.user
+        total_focus_time = FocusPeriod.objects.filter(user=user).aggregate(
+            total=Sum('duration'))['total'] or timedelta()
+        
+        context.update({
+            'timezones': pytz.common_timezones,
+            'total_focus_time': str(total_focus_time).split('.')[0],  # Remove microseconds
+            'total_sessions': FocusSession.objects.filter(owner=user).count(),
+            'tasks_completed': Task.objects.filter(user=user, is_completed=True).count(),
+            'user': user
+        })
+        
+        return context
+
+
+class ProfileUpdateView(LoginRequiredMixin, View):
+    """View for handling profile updates via HTMX."""
+    
+    def post(self, request, *args, **kwargs):
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+        
+        user = self.request.user
+        total_focus_time = FocusPeriod.objects.filter(user=user).aggregate(
+            total=Sum('duration'))['total'] or timedelta()
+        
+        context = {
+            'timezones': pytz.common_timezones,
+            'total_focus_time': str(total_focus_time).split('.')[0],  # Remove microseconds
+            'total_sessions': FocusSession.objects.filter(owner=user).count(),
+            'tasks_completed': Task.objects.filter(user=user, is_completed=True).count(),
+            'user': user
+        } 
+        # If form is invalid, return the form with errors
+        context.update({'form': form, 'user': request.user})
+        return render(request, 'profile/profile-form.html', context)
 
 
 def get_technique_info(request):

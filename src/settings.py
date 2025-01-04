@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "slippers",
     "django_htmx",
     "apps.realtime_timer",
+    "apps.timetable",
     "django_extensions",
     "channels",
 ]
@@ -163,6 +164,8 @@ STATICFILES_FINDERS = [
 
 if not DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "production_static_files")
 
@@ -300,3 +303,7 @@ SQLITE_BACKUP = {
 
 GIT_USER_NAME = os.environ.get('GIT_USER_NAME')
 GIT_USER_EMAIL = os.environ.get('GIT_USER_EMAIL')
+
+
+HUGGING_FACE_TOKEN = os.environ.get('HUGGING_FACE_TOKEN')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')

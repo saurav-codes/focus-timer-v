@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     timezone = TimeZoneField(default="UTC")
+    long_term_goals = models.CharField(max_length=300, default="")
+    short_term_goals = models.CharField(max_length=300, default="")
+    bio = models.TextField(default="")
+    
 
 
 class FocusSession(models.Model):
@@ -155,6 +159,7 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    finished_at = models.DateTimeField(default=None, blank=True, null=True)
 
     def __str__(self):
         return self.description

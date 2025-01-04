@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from channels.db import database_sync_to_async
 from uuid import UUID
 import logging
-
+from django.db.models.functions import Cast
+from django.db.models import CharField
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -263,3 +264,37 @@ def get_dashboard_data_for_user(user):
     )
 
     return context
+
+
+def get_focus_period_data_for_user(user):
+    """
+    Get the focus period data for a user.
+
+    This function will return a list of dictionaries containing the focus period data for the given user.
+    Each dictionary will have the following keys:
+        - started_at_str: The start time of the focus period in string format.
+        - ended_at_str: The end time of the focus period in string format.
+        - duration_str: The duration of the focus period in string format.
+    """
+    user_fp = FocusPeriod.objects.select_related("cycle").filter(
+        user=user,
+        cycle__is_completed=True, 
+        cycle__cycle_type=FocusCycle.FOCUS,
+        ended_at__isnull=False,
+    ).annotate(
+        # Convert started_at and ended_at to strings
+        started_at_str=Cast('started_at', output_field=CharField()),
+        ended_at_str=Cast('ended_at', output_field=CharField()),
+        # For duration, we'll convert it to string in Python
+    ).values(
+        'started_at_str',
+        'ended_at_str',
+        'duration'  # Keep duration as is, we'll format it in the view
+    )
+    
+    # Convert duration to string format in Python
+    focus_periods = list(user_fp)
+    for fp in focus_periods:
+        fp['duration_str'] = str(fp.pop('duration'))
+    
+    return focus_periods

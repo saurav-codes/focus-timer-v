@@ -1,0 +1,95 @@
+{% load humanize %}
+{% if generated_schedule %}
+    <div class="space-y-6 animate-fade-in">
+        <!-- Schedule Timeline -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+            <!-- How We Structured Your Day -->
+            {% if generated_schedule.techniques %}
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg">
+                    <h4 class="text-sm font-medium text-blue-800 mb-2">How We Structured Your Day</h4>
+                    <p class="text-sm text-blue-700">{{ generated_schedule.techniques }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Schedule Items -->
+            <div class="space-y-4" id="schedule-items">
+                {% for item in generated_schedule.schedule %}
+                    <div class="flex items-start space-x-4 group hover:bg-gray-50 p-2 rounded-lg transition-colors schedule-item" data-item-id="{{ forloop.counter }}">
+                        <!-- Time Input -->
+                        <div class="w-32 flex-shrink-0">
+                            <input type="time" 
+                                   class="text-sm font-medium text-gray-600 border-none bg-transparent focus:ring-blue-500 time-input" 
+                                   value="{{ item.time|time:'H:i' }}"
+                                   data-original-time="{{ item.time }}">
+                        </div>
+                        <!-- Task -->
+                        <div class="flex-grow">
+                            <div class="flex items-start justify-between">
+                                <textarea rows="1" 
+                                         class="text-gray-900 w-full border-none bg-transparent focus:ring-blue-500 task-input resize-none"
+                                         data-original-task="{{ item.task }}">{{ item.task }}</textarea>
+                                <div class="flex space-x-2">
+                                    <button class="text-sm text-blue-600 hover:text-blue-800 save-changes hidden">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="text-sm text-red-600 hover:text-red-800 cancel-changes hidden">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Add Task Button -->
+            <div class="mt-4">
+                <button id="add-task-btn" 
+                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Add Task
+                </button>
+            </div>
+            
+            <!-- Save All Changes -->
+            <div class="mt-6 flex justify-end">
+                <button id="save-all-changes" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 hidden">
+                    Save All Changes
+                </button>
+            </div>
+        </div>
+        
+        <!-- Goal Alignment -->
+        {% if generated_schedule.goal_alignment %}
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">How This Schedule Helps Your Goals</h3>
+                <p class="text-gray-700">{{ generated_schedule.goal_alignment }}</p>
+            </div>
+        {% endif %}
+        
+        <!-- Suggestions -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Suggestions & Insights</h3>
+            <ul class="space-y-2 list-disc list-inside text-gray-700">
+                {% for suggestion in generated_schedule.suggestions %}
+                    <li class="hover:text-gray-900 transition-colors">{{ suggestion }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <!-- Missing Information -->
+        {% if generated_schedule.missing_info %}
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Personalize Your Schedule Further</h3>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <p class="text-sm text-yellow-800">{{ generated_schedule.missing_info }}</p>
+                    <div class="mt-4 flex space-x-4">
+                        <a href="{% url 'realtime_timer:profile_update' %}"
+                           class="text-sm text-yellow-800 hover:text-yellow-900 underline">Update Profile</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}

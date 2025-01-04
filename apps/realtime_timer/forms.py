@@ -1,6 +1,6 @@
 from re import I
 from typing import Any
-from .models import FocusSession
+from .models import FocusSession, User
 from django import forms
 
 
@@ -51,3 +51,49 @@ class FocusSessionForm(forms.ModelForm):
         if not isinstance(duration_minutes, int):
             raise forms.ValidationError("Duration minutes must be an integer like 0, 15, 30, 45")
         return duration_minutes
+
+
+class ProfileForm(forms.ModelForm):
+    """Form for updating user profile information."""
+    
+    class Meta:
+        model = User
+        fields = ['bio', 'long_term_goals', 'short_term_goals', 'timezone']
+        widgets = {
+            'bio': forms.Textarea(attrs={
+                'rows': 4,
+                'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+                'placeholder': 'Tell us about yourself, your work style, and preferences...'
+            }),
+            'long_term_goals': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+                'placeholder': 'What do you want to achieve in the next 6-12 months?'
+            }),
+            'short_term_goals': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+                'placeholder': 'What do you want to achieve in the next 1-3 months?'
+            }),
+            'timezone': forms.Select(attrs={
+                'class': 'block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+            })
+        }
+
+    def clean_bio(self):
+        bio = self.cleaned_data['bio']
+        if len(bio) > 1000:
+            raise forms.ValidationError("Bio must be 1000 characters or less.")
+        return bio
+
+    def clean_long_term_goals(self):
+        goals = self.cleaned_data['long_term_goals']
+        if len(goals) > 1000:
+            raise forms.ValidationError("Long term goals must be 1000 characters or less.")
+        return goals
+
+    def clean_short_term_goals(self):
+        goals = self.cleaned_data['short_term_goals']
+        if len(goals) > 1000:
+            raise forms.ValidationError("Short term goals must be 1000 characters or less.")
+        return goals
