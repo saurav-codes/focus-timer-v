@@ -85,6 +85,8 @@ function initializeSchedule() {
 
     // Add new task button handler
     addTaskBtn.addEventListener('click', () => {
+        cleanupListeners();
+        initializeSchedule();
         const newItem = `
             <div class="flex items-start space-x-4 p-2 rounded-lg schedule-item group">
                 <div class="w-32">
