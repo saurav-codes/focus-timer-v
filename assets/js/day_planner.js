@@ -1,5 +1,3 @@
-// clicking on "Add New Task" button add one task item to scheduleItems but if i click that button again, it add 2 tasks at one time and if i click again then it add 4 tasks. use a very simple solution to solve this problem. AI!
-
 document.addEventListener('DOMContentLoaded', function () {
     // Re-initialize after HTMX content swap
     document.body.addEventListener('htmx:afterSwap', function (evt) {
@@ -86,7 +84,7 @@ function initializeSchedule() {
     });
 
     // Add new task button handler
-    addListener(addTaskBtn, 'click', () => {
+    addTaskBtn.addEventListener('click', () => {
         const newItem = `
             <div class="flex items-start space-x-4 p-2 rounded-lg schedule-item group">
                 <div class="w-32">
