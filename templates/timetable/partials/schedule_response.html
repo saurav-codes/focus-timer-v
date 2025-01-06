@@ -4,6 +4,7 @@
         <!-- Schedule Timeline -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+
             <!-- How We Structured Your Day -->
             {% if generated_schedule.techniques %}
                 <div class="mb-6 bg-blue-50 p-4 rounded-lg">
@@ -71,12 +72,43 @@
                 {% endfor %}
             </div>
             
-            <!-- Save All Changes -->
-            <div class="mt-6">
-                <button id="save-all-changes" 
-                        class="bg-blue-600 text-white px-4 py-2 rounded hidden">
-                    Save All Changes
-                </button>
+            <!-- Schedule Actions Form -->
+            <div class="mt-8 space-y-4 border-t pt-6">
+                <div class="flex justify-center">
+                    <button id="add-all-to-calendar" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Add All Tasks to Calendar
+                    </button>
+                </div>
+
+                <div class="max-w-2xl mx-auto">
+                    <form id="schedule-feedback-form" class="space-y-3">
+                        <div>
+                            <label for="schedule-feedback" class="block text-sm font-medium text-gray-700">
+                                Want to adjust this schedule? Tell us what changes you'd like:
+                            </label>
+                            <div class="mt-1">
+                                <textarea id="schedule-feedback" 
+                                         name="schedule_feedback" 
+                                         rows="3" 
+                                         class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border border-gray-300 rounded-md"
+                                         placeholder="Example: 'Move morning tasks 30 minutes later' or 'Add more breaks between tasks'"></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" 
+                                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Regenerate Schedule
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
             
             <!-- Goal Alignment -->
@@ -115,6 +147,7 @@
                     </div>
                 </div>
             {% endif %}
+
         </div>
     </div>
 {% endif %}

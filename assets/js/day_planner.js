@@ -127,6 +127,7 @@ function initializeSchedule() {
     cleanupAllListeners(); // clean all listeners before re-initializing
     const scheduleItems = document.querySelectorAll('.schedule-item');
     const scheduleContainer = document.querySelector('.schedule-items');
+    const addAllToCalendarBtn = document.querySelector('#add-all-to-calendar');
 
     // Initialize Sortable
     if (scheduleContainer) {
@@ -179,6 +180,30 @@ function initializeSchedule() {
         // Add new task button handler
         addListener(addTaskBtn, 'click', addNewTaskElement, human_readable_name = 'Add new task');
     });
+
+    // Add all tasks to calendar button handler
+    if (addAllToCalendarBtn) {
+        addListener(addAllToCalendarBtn, 'click', async () => {
+            const items = document.querySelectorAll('.schedule-item');
+            let addedCount = 0;
+
+            for (const item of items) {
+                const timeInput = item.querySelector('.time-input');
+                const taskInput = item.querySelector('.task-input');
+                if (timeInput && taskInput) {
+                    await addToCalendar(item, taskInput.value, timeInput.value);
+                    addedCount++;
+                }
+            }
+
+            showToast(`Added ${addedCount} tasks to calendar`, 'success');
+            // disable the button for 3 seconds
+            addAllToCalendarBtn.disabled = true;
+            setTimeout(() => {
+                addAllToCalendarBtn.disabled = false;
+            }, 3000);
+        }, human_readable_name = 'Add all to calendar');
+    }
 
 }
 
