@@ -1,11 +1,15 @@
 // Store all event listeners for cleanup
 let activeListeners = [];
-// clicking on "Add New Task" button add one task item to scheduleItems but if i click that button again, it add 2 tasks at one time and if i click again then it add 4 tasks. use a very simple solution to solve this problem. don't do irrelavant changes. AI!
-
-function addListener() {
+function addListener(element, event, handler) {
+    element.addEventListener(event, handler);
+    activeListeners.push({ element, event, handler });
 }
 
 function cleanupListeners() {
+    activeListeners.forEach(({ element, event, handler }) => {
+        element.removeEventListener(event, handler);
+    });
+    activeListeners = [];
 
 }
 
