@@ -1,17 +1,3 @@
-// Store all event listeners for cleanup
-let activeListeners = [];
-function addListener(element, event, handler) {
-    element.addEventListener(event, handler);
-    activeListeners.push({ element, event, handler });
-}
-
-function cleanupListeners() {
-    activeListeners.forEach(({ element, event, handler }) => {
-        element.removeEventListener(event, handler);
-    });
-    activeListeners = [];
-
-}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Re-initialize after HTMX content swap
