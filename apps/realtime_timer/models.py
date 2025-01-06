@@ -159,6 +159,7 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    started_at = models.DateTimeField(default=None, blank=True, null=True)
     finished_at = models.DateTimeField(default=None, blank=True, null=True)
 
     def __str__(self):

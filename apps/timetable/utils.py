@@ -5,7 +5,7 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import RedisChatMessageHistory
+from langchain_community.chat_message_histories import RedisChatMessageHistory
 from .types import ProductivityTechniques
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def get_schedule_prompt() -> ChatPromptTemplate:
 
         Response must be a valid JSON with:
         1. "schedule": list of tasks where each task has:
-           - "time": in 12-hour format (e.g., "9:00 AM", "2:30 PM")
+           - "time": in 24-hour format (e.g., "09:00", "22:30")
            - "task": specific, actionable task in simple language
         2. "suggestions": list of practical advice for the day
         3. "techniques": brief explanation of how the day is structured
@@ -102,7 +102,7 @@ def get_schedule_prompt() -> ChatPromptTemplate:
                     - Use simple, clear language
                     - Make tasks extremely specific
                     - Include regular breaks (15 mins every 1-2 hours)
-                    - Format times in AM/PM
+                    - Format times in 24-hour format (e.g., "09:00", "22:30")
                     - If bio/goals are missing, suggest updating them
 
                     4. Examples of good tasks:

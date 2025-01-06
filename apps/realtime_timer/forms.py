@@ -55,7 +55,14 @@ class FocusSessionForm(forms.ModelForm):
 
 class ProfileForm(forms.ModelForm):
     """Form for updating user profile information."""
-    
+
+    def __init__(self, *args, **kwargs):
+        super(ProfileForm, self).__init__(*args, **kwargs)
+        self.fields['bio'].required = False
+        self.fields['long_term_goals'].required = False
+        self.fields['timezone'].required = False
+        self.fields['short_term_goals'].required = False
+
     class Meta:
         model = User
         fields = ['bio', 'long_term_goals', 'short_term_goals', 'timezone']

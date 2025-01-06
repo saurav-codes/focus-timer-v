@@ -33,6 +33,7 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
+    "hijack.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     "apps.timetable",
     "django_extensions",
     "channels",
+    "hijack",
 ]
 
 ALLAUTH_UI_THEME = "forest"
@@ -65,6 +67,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
+    'hijack.middleware.HijackUserMiddleware',
 ]
 
 ROOT_URLCONF = "src.urls"

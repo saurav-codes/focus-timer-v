@@ -23,3 +23,6 @@ venv_focus_timer/
 
 .zed/
 pyrightconfig.json
+
+.codegpt
+.aider*

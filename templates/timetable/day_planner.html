@@ -2,8 +2,22 @@
 {% load static %}
 {% block extra_head %}
     {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"
+        integrity="sha512-TelkP3PCMJv+viMWynjKcvLsQzx6dJHvIGhfqzFtZKgAjKM1YPqcwzzDEoTc/BHjf43PcPzTQOjuTr4YdE8lNQ=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+    <script src="{% static 'js/day_planner.js' %}" defer></script>
+    <!-- JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+            integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"></script>
+    <!-- Custom CSS for this file -->
     <link rel="stylesheet" href="{% static 'css/day_planner.css' %}">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- CSS file for multiselect plugin -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
+    <!-- JS cdn for multiselect plugin -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 {% endblock %}
 {% block content %}
@@ -22,41 +36,33 @@
                     <div class="space-y-6">
                         <!-- Thoughts Input -->
                         <div>
-                            <label for="thoughts" class="block text-sm font-medium text-gray-700 mb-2">
-                                What's on your mind today?
-                            </label>
+                            <label for="thoughts" class="block text-sm font-medium text-gray-700 mb-2">What's on your mind today?</label>
                             <div class="relative">
                                 <textarea id="thoughts"
                                           name="task-1"
                                           rows="4"
                                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                           placeholder="Share your thoughts, tasks, or simply type 'idk' if you're unsure..."></textarea>
-                                <div class="absolute bottom-2 right-2 text-xs text-gray-400 bg-white px-1">
-                                    Ctrl + Enter to submit
-                                </div>
+                                <div class="absolute bottom-2 right-2 text-xs text-gray-400 bg-white px-1">Ctrl + Enter to submit</div>
                             </div>
                         </div>
-                        
                         <!-- Productivity Techniques Selector -->
                         <div>
                             <label for="techniques" class="block text-sm font-medium text-gray-700 mb-2">
                                 Select Productivity Techniques
                                 <span class="text-xs text-gray-500">(Optional)</span>
                             </label>
-                            <select id="techniques" 
-                                    name="techniques[]" 
-                                    class="select2-multi w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" 
+                            <select id="techniques"
+                                    name="techniques[]"
+                                    class="select2-multi w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                     multiple>
                                 {% for technique in productivity_techniques %}
                                     <option value="{{ technique.value }}">{{ technique.label }}</option>
                                 {% endfor %}
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">
-                                Choose techniques you'd like to incorporate into your schedule
-                            </p>
+                            <p class="mt-1 text-xs text-gray-500">Choose techniques you'd like to incorporate into your schedule</p>
                         </div>
                     </div>
-
                     <div class="flex justify-end mt-6">
                         <button type="submit"
                                 id="generate-schedule-btn"
@@ -67,7 +73,6 @@
                     </div>
                 </form>
             </div>
-            
             <!-- Loading Indicator -->
             <div id="loading-indicator" class="htmx-indicator">
                 <div class="space-y-6">
@@ -85,14 +90,10 @@
                     </div>
                 </div>
             </div>
-            
             <!-- Schedule Response -->
-            <div id="schedule-response">
-                {% include "timetable/partials/schedule_response.html" %}
-            </div>
+            <div id="schedule-response">{% include "timetable/partials/schedule_response.html" %}</div>
         </div>
     </div>
-    
     <style>
     .htmx-indicator {
         display: none;
@@ -115,187 +116,4 @@
         color: #374151;
     }
     </style>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Select2
-        $('.select2-multi').select2({
-            placeholder: 'Select techniques...',
-            allowClear: true,
-            closeOnSelect: false,
-            width: '100%'
-        });
-
-        const form = document.getElementById('schedule-form');
-        const textarea = document.getElementById('thoughts');
-
-        textarea.addEventListener('keydown', function (e) {
-            if (e.ctrlKey && e.key === 'Enter') {
-                form.submit();
-            }
-        });
-        
-        // Schedule adjustment functionality
-        function initializeScheduleAdjustments() {
-            const scheduleItems = document.querySelectorAll('.schedule-item');
-            const saveAllBtn = document.getElementById('save-all-changes');
-            const addTaskBtn = document.getElementById('add-task-btn');
-            
-            let hasChanges = false;
-            
-            function showSaveButtons(item) {
-                const saveBtn = item.querySelector('.save-changes');
-                const cancelBtn = item.querySelector('.cancel-changes');
-                if (saveBtn) saveBtn.classList.remove('hidden');
-                if (cancelBtn) cancelBtn.classList.remove('hidden');
-                saveAllBtn.classList.remove('hidden');
-                hasChanges = true;
-            }
-            
-            function hideSaveButtons(item) {
-                const saveBtn = item.querySelector('.save-changes');
-                const cancelBtn = item.querySelector('.cancel-changes');
-                if (saveBtn) saveBtn.classList.add('hidden');
-                if (cancelBtn) cancelBtn.classList.add('hidden');
-                checkForAnyChanges();
-            }
-            
-            function checkForAnyChanges() {
-                const items = document.querySelectorAll('.schedule-item');
-                hasChanges = false;
-                
-                items.forEach(item => {
-                    const timeInput = item.querySelector('.time-input');
-                    const taskInput = item.querySelector('.task-input');
-                    const originalTime = timeInput.dataset.originalTime;
-                    const originalTask = taskInput.dataset.originalTask;
-                    
-                    if (timeInput.value !== originalTime || taskInput.value !== originalTask) {
-                        hasChanges = true;
-                    }
-                });
-                
-                if (hasChanges) {
-                    saveAllBtn.classList.remove('hidden');
-                } else {
-                    saveAllBtn.classList.add('hidden');
-                }
-            }
-            
-            // Handle input changes
-            scheduleItems.forEach(item => {
-                const timeInput = item.querySelector('.time-input');
-                const taskInput = item.querySelector('.task-input');
-                const saveBtn = item.querySelector('.save-changes');
-                const cancelBtn = item.querySelector('.cancel-changes');
-                
-                timeInput.addEventListener('change', () => showSaveButtons(item));
-                taskInput.addEventListener('input', () => showSaveButtons(item));
-                
-                // Auto-resize textarea
-                taskInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = this.scrollHeight + 'px';
-                });
-                
-                // Save changes for individual item
-                saveBtn.addEventListener('click', () => {
-                    timeInput.dataset.originalTime = timeInput.value;
-                    taskInput.dataset.originalTask = taskInput.value;
-                    hideSaveButtons(item);
-                });
-                
-                // Cancel changes for individual item
-                cancelBtn.addEventListener('click', () => {
-                    timeInput.value = timeInput.dataset.originalTime;
-                    taskInput.value = taskInput.dataset.originalTask;
-                    hideSaveButtons(item);
-                });
-            });
-            
-            // Add new task
-            addTaskBtn.addEventListener('click', () => {
-                const newItem = document.createElement('div');
-                newItem.className = 'flex items-start space-x-4 group hover:bg-gray-50 p-2 rounded-lg transition-colors schedule-item';
-                newItem.innerHTML = `
-                    <div class="w-32 flex-shrink-0">
-                        <input type="time" 
-                               class="text-sm font-medium text-gray-600 border-none bg-transparent focus:ring-blue-500 time-input"
-                               value="12:00"
-                               data-original-time="12:00">
-                    </div>
-                    <div class="flex-grow">
-                        <div class="flex items-start justify-between">
-                            <textarea rows="1" 
-                                     class="text-gray-900 w-full border-none bg-transparent focus:ring-blue-500 task-input resize-none"
-                                     data-original-task="New task">New task</textarea>
-                            <div class="flex space-x-2">
-                                <button class="text-sm text-blue-600 hover:text-blue-800 save-changes">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button class="text-sm text-red-600 hover:text-red-800 cancel-changes">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('schedule-items').appendChild(newItem);
-                initializeScheduleAdjustments(); // Reinitialize for new items
-            });
-            
-            // Save all changes
-            saveAllBtn.addEventListener('click', async () => {
-                const items = document.querySelectorAll('.schedule-item');
-                const updatedSchedule = [];
-                
-                items.forEach(item => {
-                    const timeInput = item.querySelector('.time-input');
-                    const taskInput = item.querySelector('.task-input');
-                    updatedSchedule.push({
-                        time: timeInput.value,
-                        task: taskInput.value
-                    });
-                });
-                
-                try {
-                    const response = await fetch('{% url "timetable:update-schedule" %}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                        },
-                        body: JSON.stringify({ schedule: updatedSchedule })
-                    });
-                    
-                    if (response.ok) {
-                        saveAllBtn.classList.add('hidden');
-                        hasChanges = false;
-                        // Update all original values
-                        items.forEach(item => {
-                            const timeInput = item.querySelector('.time-input');
-                            const taskInput = item.querySelector('.task-input');
-                            timeInput.dataset.originalTime = timeInput.value;
-                            taskInput.dataset.originalTask = taskInput.value;
-                            hideSaveButtons(item);
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error saving schedule:', error);
-                }
-            });
-        }
-        
-        // Initialize schedule adjustments when content is loaded
-        initializeScheduleAdjustments();
-        
-        // Re-initialize after HTMX content swap
-        document.body.addEventListener('htmx:afterSwap', function(evt) {
-            if (evt.detail.target.id === 'schedule-response') {
-                initializeScheduleAdjustments();
-            }
-        });
-    });
-    </script>
 {% endblock %}

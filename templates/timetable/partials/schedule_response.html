@@ -13,83 +13,108 @@
             {% endif %}
             
             <!-- Schedule Items -->
-            <div class="space-y-4" id="schedule-items">
+            <div class="schedule-items space-y-4" id="schedule-items">
                 {% for item in generated_schedule.schedule %}
-                    <div class="flex items-start space-x-4 group hover:bg-gray-50 p-2 rounded-lg transition-colors schedule-item" data-item-id="{{ forloop.counter }}">
-                        <!-- Time Input -->
-                        <div class="w-32 flex-shrink-0">
-                            <input type="time" 
-                                   class="text-sm font-medium text-gray-600 border-none bg-transparent focus:ring-blue-500 time-input" 
-                                   value="{{ item.time|time:'H:i' }}"
-                                   data-original-time="{{ item.time }}">
-                        </div>
-                        <!-- Task -->
-                        <div class="flex-grow">
-                            <div class="flex items-start justify-between">
-                                <textarea rows="1" 
-                                         class="text-gray-900 w-full border-none bg-transparent focus:ring-blue-500 task-input resize-none"
-                                         data-original-task="{{ item.task }}">{{ item.task }}</textarea>
-                                <div class="flex space-x-2">
-                                    <button class="text-sm text-blue-600 hover:text-blue-800 save-changes hidden">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="text-sm text-red-600 hover:text-red-800 cancel-changes hidden">
-                                        <i class="fas fa-times"></i>
-                                    </button>
+                    <div class="relative p-2 rounded-lg schedule-item group cursor-move hover:bg-gray-50">
+                        <div class="flex items-start space-x-4">
+                            <!-- Drag Handle -->
+                            <div class="flex-shrink-0 w-6 flex items-center justify-center text-gray-400">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 6a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM8 12a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM8 18a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM20 6a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM20 12a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM20 18a2 2 0 1 0-4 0 2 2 0 0 0 4 0z" />
+                                </svg>
+                            </div>
+                            <!-- Time Input -->
+                            <div class="w-32 flex-shrink-0">
+                                <input type="time" 
+                                       class="text-sm font-medium text-gray-600 border rounded px-2 py-1 time-input w-full" 
+                                       value="{{ item.time }}"
+                                       data-original-time="{{ item.time }}">
+                            </div>
+                            <!-- Task Input and Action Buttons -->
+                            <div class="flex-grow">
+                                <div class="relative flex items-center">
+                                    <input type="text"
+                                           name="task"
+                                           class="text-gray-900 w-full border rounded px-2 py-1 task-input"
+                                           value="{{ item.task }}"
+                                           data-original-task="{{ item.task }}"
+                                           maxlength="255">
+                                    
+                                    <!-- Side Action Buttons -->
+                                    <div class="flex items-center space-x-2 ml-2">
+                                        <button class="text-red-500 hover:text-red-700 p-1 rounded-full delete-task-btn">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                        <button title="Save to your Tasks List"
+                                                class="add-to-calendar-btn text-green-500 hover:text-green-700 p-1 rounded-full">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- Add Task Button (Hidden by default, shown on hover/focus) -->
+                        <div class="absolute left-1/2 -bottom-3 transform -translate-x-1/2 opacity-0 transition-opacity duration-200 z-10 group-hover:opacity-100 group-focus-within:opacity-100">
+                            <button 
+                                class="add-task-btn inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                            </button>
+                        </div>
+
                     </div>
                 {% endfor %}
-            </div>
-            
-            <!-- Add Task Button -->
-            <div class="mt-4">
-                <button id="add-task-btn" 
-                        class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Add Task
-                </button>
             </div>
             
             <!-- Save All Changes -->
-            <div class="mt-6 flex justify-end">
+            <div class="mt-6">
                 <button id="save-all-changes" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 hidden">
+                        class="bg-blue-600 text-white px-4 py-2 rounded hidden">
                     Save All Changes
                 </button>
             </div>
-        </div>
-        
-        <!-- Goal Alignment -->
-        {% if generated_schedule.goal_alignment %}
+            
+            <!-- Goal Alignment -->
+            {% if generated_schedule.goal_alignment %}
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">How This Schedule Helps Your Goals</h3>
+                    <p class="text-gray-700">{{ generated_schedule.goal_alignment }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Suggestions -->
+            {% if generated_schedule.suggestions %}
             <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">How This Schedule Helps Your Goals</h3>
-                <p class="text-gray-700">{{ generated_schedule.goal_alignment }}</p>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Suggestions & Insights</h3>
+                <ul class="space-y-2 list-disc list-inside text-gray-700">
+                    {% for suggestion in generated_schedule.suggestions %}
+                        <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
             </div>
-        {% endif %}
-        
-        <!-- Suggestions -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Suggestions & Insights</h3>
-            <ul class="space-y-2 list-disc list-inside text-gray-700">
-                {% for suggestion in generated_schedule.suggestions %}
-                    <li class="hover:text-gray-900 transition-colors">{{ suggestion }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        
-        <!-- Missing Information -->
-        {% if generated_schedule.missing_info %}
-            <div class="bg-white rounded-lg shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Personalize Your Schedule Further</h3>
-                <div class="bg-yellow-50 p-4 rounded-lg">
-                    <p class="text-sm text-yellow-800">{{ generated_schedule.missing_info }}</p>
-                    <div class="mt-4 flex space-x-4">
-                        <a href="{% url 'realtime_timer:profile_update' %}"
-                           class="text-sm text-yellow-800 hover:text-yellow-900 underline">Update Profile</a>
+            {% endif %}
+            
+            <!-- Missing Information -->
+            {% if generated_schedule.missing_info %}
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Personalize Your Schedule Further</h3>
+                    <div class="bg-yellow-50 p-4 rounded-lg">
+                        <p class="text-sm text-yellow-800">{{ generated_schedule.missing_info }}</p>
+                        <div class="mt-4">
+                            <a target="_blank" 
+                               href="{% url 'realtime_timer:profile' %}"
+                               class="text-blue-600 hover:text-blue-800 underline">
+                                Update Profile
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
 {% endif %}

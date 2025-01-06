@@ -21,8 +21,10 @@ from django.conf import settings
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
-    path("planner/", include("apps.timetable.urls")),
+    path('hijack/', include('hijack.urls')),
+    path("timetable/", include("apps.timetable.urls")),
     path("", include("apps.realtime_timer.urls")),
+
 ]
 if settings.DEBUG:
     # serve static files in development
