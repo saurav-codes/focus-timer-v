@@ -4,16 +4,21 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Focus Timer - A tool to help you stay focused and productive with customizable techniques like Pomodoro, 52/17 Method, and more.">
-        <meta name="keywords" content="focus timer, productivity, pomodoro, time management, 52/17 method, focus techniques">
+        <meta name="description"
+              content="Focus Timer - A tool to help you stay focused and productive with customizable techniques like Pomodoro, 52/17 Method, and more.">
+        <meta name="keywords"
+              content="focus timer, productivity, pomodoro, time management, 52/17 method, focus techniques">
         <meta name="author" content="Saurav Sharma">
         <meta name="robots" content="index, follow">
         <meta property="og:title" content="Focus Timer - Boost Your Productivity">
-        <meta property="og:description" content="Enhance your focus and productivity with customizable timer techniques. Try Focus Timer today!">
+        <meta property="og:description"
+              content="Enhance your focus and productivity with customizable timer techniques. Try Focus Timer today!">
         <meta property="og:type" content="website">
         <meta property="og:url" content="https://tymr.online">
         <meta property="og:image" content="{% static 'focus-timer-favicon.png' %}">
-        <link rel="shortcut icon" href="{% static 'focus-timer-favicon.png' %}" type="image/x-icon">
+        <link rel="shortcut icon"
+              href="{% static 'focus-timer-favicon.png' %}"
+              type="image/x-icon">
         <title>
             {% block title %}Focus Timer - Boost Your Productivity{% endblock %}
         </title>
@@ -43,8 +48,6 @@
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
         {% block extra_head %}{% endblock %}
-        <script src="https://beamanalytics.b-cdn.net/beam.min.js" data-token="4d8d10b5-436d-4483-b61d-392ee0f77a3d" async>
-        </script>
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
             tailwind.config = {
@@ -127,11 +130,6 @@
         console.log("%c👋 Well hello there, curious developer!", "font-size: 20px; font-weight: bold; color: #3498db;");
         console.log("%c🕵️‍♂️ Caught you peeking under the hood!", "font-size: 16px; color: #2ecc71;");
         console.log("%c💡I am the only developer working on it.. so, it may have bugs.. if you are facing any issues, please reach out to me @ https://x.com/saurav__codes or email me at selftaughtdev@pm.me", "font-size: 18px; font-weight: bold; color: #e74c3c;");
-        </script>
-        <script>
-            !function(i,o,r){i[r]&&i[r].isLoaded||(i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].init=function(n,e){var t;i[r].loading||(i[r].loading=!0,(script=o.createElement("script")).type="text/javascript",script.src="https://cdn.unghoster.com/unghoster.js",script.async=!0,script.onload=function()
-            {for(i[r].loaded=!0,i[r].loading=!1,i[r].load&&i[r].load(n,e);i[r].q&&i[r].q.length;){var t=i[r].q.shift();i[r].apply(null,t)}},(t=o.getElementsByTagName("script")[0]).parentNode.insertBefore(script,t))})}
-            (window,document,"unghoster"),unghoster.init("941efcff-e01f-4e9d-82ac-6bc934f31e1f");
         </script>
     </body>
 </html>
