@@ -111,31 +111,6 @@ class FocusSessionConsumer(AsyncWebsocketConsumer):
         elif timer_state == "resumed":
             await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
 
-    # @check_session_owner_async
-    # async def change_cycle_if_needed(self, session):
-    #     """
-    #     This function is called by the system to change the cycle if needed
-    #     it is called when the timer is stopped or when the timer is paused/resumed
-    #     usually it will be called by system on the scheduled time as we are using
-    #     redis zset to store the scheduled time to change the cycle
-    #     """
-    #     logger.info(
-    #         f"Changing cycle if needed for user '{self.user.username}' in session '{self.session_id}'",
-    #         extra={"request": self.request},
-    #     )
-    #     cycle_changed = await self.timer_service.change_cycle_if_needed(session=session)
-    #     if cycle_changed:
-    #         # Send notification when cycle changes
-    #         cycle_type = session.current_cycle.cycle_type.lower()
-    #         message = f"Time's up! Your {cycle_type} session has ended."
-    #         logger.info("cycle is completed. so sending notification")
-    #         await send_onesignal_notification(self.session_id, message)
-    #     else:
-    #         logger.info("cycle is not completed. so not sending notification")
-
-    #     # now we have new cycle so we need to schedule the next cycle change
-    #     await self.timer_service.schedule_next_cycle_change(redis_client=self.redis_client)
-
     @check_session_owner_async
     async def stop_timer(self):
         logger.info(
