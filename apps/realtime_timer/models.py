@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 class User(AbstractUser):
     timezone = TimeZoneField(default="UTC")
-    long_term_goals = models.CharField(max_length=300, default="")
-    short_term_goals = models.CharField(max_length=300, default="")
+    long_term_goals = models.CharField(max_length=1000, default="")
+    short_term_goals = models.CharField(max_length=1000, default="")
     bio = models.TextField(default="")
     
 

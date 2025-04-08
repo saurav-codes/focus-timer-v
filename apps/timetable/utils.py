@@ -190,14 +190,14 @@ def generate_schedule_ai_gpt(
     """
     try:
         # Initialize models with higher temperature for more creative reasoning
-        llm = ChatOpenAI(model="gpt-4o", temperature=0.8)
+        llm = ChatOpenAI(model="o3-mini")
         prompt = get_schedule_prompt()
         parser = JsonOutputParser(pydantic_object=ScheduleOutput)
 
         # Prepare input data
         input_data = UserInput(
-            goals=user_profile.get("goals", "Not provided"),
-            short_goals=user_profile.get("short_goals", "Not provided"),
+            goals=user_profile.get("long_term_goals", "Not provided"),
+            short_goals=user_profile.get("short_term_goals", "Not provided"),
             bio=user_profile.get("bio", "Not provided"),
             tasks="\n".join(todays_tasks) if todays_tasks else "No specific tasks provided",
             patterns=previous_schedule,

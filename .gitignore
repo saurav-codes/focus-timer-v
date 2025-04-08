@@ -26,3 +26,4 @@ pyrightconfig.json
 
 .codegpt
 .aider*
+.venv
