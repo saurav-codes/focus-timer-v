@@ -1,3 +1,5 @@
+Algorithm i used to calculate time intervals for sessions using camel technique. this camel style focus intervals is used by twitch streamer https://www.twitch.tv/vanyastudytogether/
+
 ```mermaid
 graph TD
     A[Start] --> B[Calculate total minutes]
